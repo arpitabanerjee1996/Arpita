@@ -1,0 +1,265 @@
+---
+title: "R Learner's Permit Exam"
+author: "Andrew J. Greenlee, Ph.D."
+date: "2/19/2021"
+output:
+  html_notebook:
+    toc: yes
+---
+
+# Introduction
+Over the course of the first few weeks of our class, you have learned some basic elements of the R programming language and RStudio IDE. As we move forward with our class, we will continue to add knowledge of new packages, tools, and data within R.
+
+This R Learner's Permit is designed to assess your knowledge of the core elements of the R language and software that we have focused on so far in class.
+
+## Instructions
+
+Please follow the instructions contained in this R Notebook, which involve filling in code and generating output. Most instructions ask you to add or fill in code chunks. Others ask you to provide a written interpretation in the notebook portion of the document.
+
+Complete as many items as you can. If you run into trouble completing an item, add comments to your code or in the notebook describing where you are running into problems, and what you think the next step might be to solving the problem you're having.
+
+Complete as many items as you can and then upload your R Notebook to the "R Learners Permit" folder in your assignment repository on GitHub.
+
+## The Data
+
+In the "data" subfolder of this project, you will find one .rds file called NYC_Violations.rds. This is the data you will use to earn your learner's permit. These are "real world" data derived from two sources:
+
+1. New York City [housing maintainance code violation](https://urldefense.com/v3/__https://data.cityofnewyork.us/Housing-Development/Housing-Maintenance-Code-Violations/wvxf-dwi5__;!!DZ3fjg!pwe76B1AOn_55xHdMQQzld1s4qOKaJIODlUW9UDIb3P7zIJgqF8IRaZTstvr6dSxzn8$ ) data for the years 2009 to 2019
+2. Data on property characteristics from the [Primary Land Use Tax Lot Output (PLUTO)](https://urldefense.com/v3/__https://www1.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page__;!!DZ3fjg!pwe76B1AOn_55xHdMQQzld1s4qOKaJIODlUW9UDIb3P7zIJgqF8IRaZTstvr8QDbag0$ ) database
+
+I have merged selected columns from these datasets for you (you will find data documentation and metadata for both datasets in the documentation subfolder), and after taking a close look at the dataset and the documentation, you should be able to identify which portions of the data you will work with come from each dataset.
+
+The PLUTO data contains information on each [tax lot](https://urldefense.com/v3/__http://gis.nyc.gov/taxmap/map.htm__;!!DZ3fjg!pwe76B1AOn_55xHdMQQzld1s4qOKaJIODlUW9UDIb3P7zIJgqF8IRaZTstvrbRTX8Z4$ ) within the city of New York. By merging these data which contain characteristics of buildings and land with the building code violation data, the data you have to work with describes the characteristics of the building and property where the violation occurred as well as the nature of the violation. It is essential for you to spend the time to think carefully about what each row in the building code violation data represents.
+
+# Earn Your Learner's Permit
+
+With that background in mind, its time to earn your learner's permit.
+
+## Task 1: Load and Describe the Data
+
+At the beginning of the script, we will create a holding area within which you can load any packages you may need to work with as you year your R Learner's Permit (if you are not using any packages, please leave this area blank):
+```{r, echo=FALSE}
+# Your Code Here
+library(readxl)
+library(tidyverse)
+library(dplyr)
+library(plotrix)
+```
+
+Use the `readRDS()` command to load the data into an object with the name of your choice.
+```{r}
+# Your Code Here
+nyc_data <- readRDS("data/NYC_Violations.rds")
+nyc_data_wb <- readRDS("data/NYC_Violations_WB.rds")
+```
+
+Describe the structure of the data, including the number of rows and columns in the data. Create a table outside of the code chunk below in your notebook that describes each variable name and what each row in the data represents (a [Markdown table generator](https://urldefense.com/v3/__https://www.tablesgenerator.com/markdown_tables__;!!DZ3fjg!pwe76B1AOn_55xHdMQQzld1s4qOKaJIODlUW9UDIb3P7zIJgqF8IRaZTstvrZChlz1E$ ) may be useful):
+```{r}
+# Your Code Here
+str(nyc_data, vec.len=0, give.length=FALSE)
+```
+ Rows: 4,483,422
+ Cols: 31
+ | Variable Name  | Type |
+ |----------------|------|
+ | Borough        | chr  |
+ | HouseNumber    | chr  |
+ | StreetName     | chr  | 
+ | Postcode       | num  | 
+ | Apartment      | chr  | 
+ | Story          | chr  | 
+ | InspectionDate | Date | 
+ | OrderNumber    | num  |
+ | NOVIssuedDate  | chr  |
+ | CurrentStatus  | chr  | 
+ | ViolationStatus| chr  | 
+ | BBL            | chr  | 
+ | NTA            | chr  | 
+ | InspectionYear | num  |
+ | borough        | chr  |
+ | council        | num  |
+ | zipcode        | num  |
+ | address        | chr  |
+ | zonedist1      | chr  |
+ | bldgclass      | chr  |
+ | landuse        | chr  |
+ | ownername      | chr  |
+ | lotarea        | num  |
+ | numbldgs       | chr  |
+ | numfloors      | num  |
+ | unitsres       | num  |
+ | unitstotal     | num  |
+ | assessland     | num  |
+ | assesstot      | num  |
+ | yearbuilt      | num  |
+ | histdist       | chr  |
+ **Your Narrative Description of the Data Structure:** This is a table comprising of 31 column names. It gives us the details of each house in New York that was subjected to a certain violations. Each observation represents a building violation in the city of New York. Details about the building including their lot area, number of floors, number of reidential units, year of building, and whether it's present in a historical district.
+
+***
+## Task 2: Summarize Violations
+
+Describe the number of unique violations for each year (information on the year the unit was inspected for violations is contained in the InspectionYear variable):
+```{r}
+# Your Code Here
+violationsPerYear <- nyc_data %>% count(InspectionYear) 
+
+```
+
+Now, build upon your summary code to make a plot (geometry of your choice) of inspections by year:
+```{r}
+plot(violationsPerYear)
+```
+
+In your own words, what is the overall trend with regards to the number of violations issued between 2009 and 2019?:
+
+**Your Narrative Description:** From before 2010 up till 2015, the graph had been rising steadily with a little bit of stabilization between 2013 and 2014. After 2014, the violation rate rose starkly till 2015 and reduced in 2016. Thereafter between 2017 and beyond, the curve shows a trend towards flattening.
+
+Next, describe the number of unique violations for each New York City borough. Do this using both *base* r code and using `dplyr` code that utilizes the `summarise()` function:
+```{r}
+# Your Code Here
+violationsByBorough <- nyc_data %>% count(Borough)
+```
+***
+## Task 3: More Detail on Violations
+
+Let's create some more detailed summaries of violations. 
+
+Create a table that enumerates by borough the number of violations that are currently closed or open (ViolationStatus). Remove the `NA` values so that you are just reporting open and closed cases:
+```{r}
+# Your Code Here
+openOrClosedViolationsByBorough <- subset(nyc_data, !is.na(ViolationStatus)) %>% count(Borough, ViolationStatus)
+```
+See if you can refine the formatting of this table. Although we haven't formally introduced `pivot_wider()` yet, try using it so that you produce a summary in which there are three columns - the borough, the number of closed cases, and the number of open cases (remember you can search for documentation, e.g. `?pivot_wider()`). You will need to supply pivot_wider with an argument for `names_from` and an argument for `values_from`. Names should come from the Violation Status column, and values should come from the column in which the count of violations is contained.
+```{r}
+# Your Code Here
+fancyOpenOrClosedViolationsByBorough <- pivot_wider(openOrClosedViolationsByBorough, names_from = ViolationStatus, values_from = n)
+```
+Now create a chart (geom of your choice) that represents the number of *open cases* by borough by the year in which the violation occurred:
+```{r}
+pie(fancyOpenOrClosedViolationsByBorough$Open, labels = fancyOpenOrClosedViolationsByBorough$Borough)
+```
+
+Now, create a table with the total number of *buildings* with violations (remember, there may be multiple violations per building in the data). Remember that the BBL column contains a unique identification number for each building (technically it's each tax lot, but we'll use that as a proxy for building). You can use the `distinct()` command to create a subset of the distinct buildings with violations. You could also use the `summarise()` command to accomplish something similar...
+
+```{r}
+# Your Code Here
+nyc_data %>% distinct(BBL)
+```
+
+Let's create a final summary table of buildings with violations and total violations by borough. Use `dplyr` [join syntax](https://urldefense.com/v3/__https://dplyr.tidyverse.org/reference/join.html__;!!DZ3fjg!pwe76B1AOn_55xHdMQQzld1s4qOKaJIODlUW9UDIb3P7zIJgqF8IRaZTstvr-cAmntg$ ) to accomplish this. Your table should have a column containing the borough name, a column containing the total number of buildings with violations, and a column containing the total number of violations.
+```{r}
+# Your Work Here
+summary <- inner_join(nyc_data %>% distinct(Borough, BBL) %>% count(Borough), nyc_data %>% count(Borough), by=c("Borough" = "Borough"))
+```
+
+Finally, add to this table, the average violations per building by borough. You can use the `mutate()` command to add this column to your existing table.
+
+```{r}
+# Your Work Here
+updatedSummary <- mutate(summary, ViolationsPerBuilding = n.y / n.x)
+```
+Which boroughs contain higher rates of violations per building?
+
+**Your Narrative Description on Violations by Borough:** THe highest violations per building is in Bronx, which is also a low income neighborhood with a predominantly Black population. High number of violations is also visible in Manhattan and Brooklyn, which are mostly comprised of high income families. There is no clear correlation between populations of racial minorities and low income groups. Staten Island and Queens (on the outskirts of the city), which are spatially contiguous, have low rates of violations.
+
+***
+
+## Task 4: Building Ages
+
+Create a table that displays the mean and median ages (yearbuilt) of buildings with violations by borough. Remember that individual buildings may have multiple observations - you will need to figure out how to create a summary of the dataset that includes one record per building to generate an unbiased summary.
+```{r}
+# Your Code Here
+builtBuildings <- nyc_data %>% distinct(Borough, BBL, yearbuilt) %>% select(Borough, yearbuilt);
+meanMedian <- data.frame(matrix(ncol = 3, nrow = 0));
+colnames(meanMedian) = c("Borough", "MedianAge", "MeanAge");
+Borough <- MedianAge <- MeanAge<- c()
+for(value in (builtBuildings %>% distinct(Borough))$Borough) {
+  MedianAge <- append(MedianAge, 2021 - median((builtBuildings %>% subset(Borough==value))$yearbuilt, na.rm=TRUE));
+  MeanAge <- append(MeanAge, 2021 - mean((builtBuildings %>% subset(Borough==value))$yearbuilt, na.rm=TRUE));
+  Borough <- append(Borough, value)
+}
+meanMedian <- data.frame(Borough, MedianAge, MeanAge)
+```
+
+Add to the table that you just made two columns that include the ages of the oldest and youngest buildings for each borough (since the years are numeric, the functions `min()` and `max()` may be useful here):
+```{r}
+# Your Code Here
+
+```
+
+What do you discover when trying to do this, and how might you modify your code to rectify it?
+
+**Your Narrative Description of this Table and code to address your discovery:**
+
+```{r}
+# Your Code here
+
+```
+
+**Your Narrative Description of the implications of any modifications you made between the last two code chunks:**
+
+***
+## Task 5: Decade Comparison
+Thinking about each borough, create a table that would allow us to compare the frequency of violations in 2009 with the frequency of violations in 2019. 
+
+```{r}
+# Your Code Here
+
+```
+
+How has the frequency of violations changed over the decade?
+**Your Narrative Description:**
+
+***
+
+## Task 6: Frequency of Violations by Violation Type
+
+The OrderNumber column contains information on the actual violation recorded (the housing maintenance code violation user guide contains a narrative description of each order number).
+
+What is the most frequent code violation recorded in each borough?
+```{r}
+# Your Code Here
+
+```
+
+**Your Narrative Description:**
+
+***
+## Task 7: Building Owners with the Most Violations
+
+Which identifiable owner (ownername) has the highest rate of violations per unit?
+```{r}
+# Your Code Here
+
+```
+
+**Your Narrative Description:**
+
+***
+## Task 8: Buildings in Historic Districts
+
+For each Borough, how many violations occur in *buildings* built after 1957 which are located in historic districts (histdist)?
+
+```{r}
+# Your Code Here
+
+```
+
+Add to this table the average assessed value of the land (assessland), the average assessed value of the buildings, and the average total assessed value.
+
+```{r}
+# Your Code Here
+
+```
+
+For those buildings in historic districts, how different are the ratios of the assessed values for land and buildings in each borough? What is your interpretation of these differences?
+
+```{r}
+# Your Code Here
+
+```
+**Your Narrative Description:**
+
+***
+# The End
+That's it - you're done! Your permit will be assessed and returned shortly. Please submit your R notebook to the appropriate GitHub folder. Rename the notebook so that the name is lastname_firstname_Permit.Rmd (e.g. Greenlee_Andrew_Permit.Rmd). You just need to upload the .Rmd file - no need to include the whole file structure.
