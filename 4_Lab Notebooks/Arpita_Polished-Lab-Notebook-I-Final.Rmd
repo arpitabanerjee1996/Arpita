@@ -1,0 +1,494 @@
+---
+title: "Mapping and Measuring Residential Segregation"
+author: "Arpita Banerjee."
+date: "3/19/2021"
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  pdf_document:
+    toc: yes
+  include: FALSE
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include = FALSE, message=FALSE}
+rm(list=ls())
+#census_api_key("936c96236b979ae522c6cf67edb51923cd391fb3")
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(tigris)
+
+
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+```
+
+# 1. Introduction 
+
+The data used in the following analysis has been taken from the US Census Bureau, American Community Survey for 5 year periods. All the tables have been directly imported into R through Tidycensus.  
+
+```{r, include=FALSE}
+#Downloading tract level spatial data
+il_trt <- tracts(state="IL", class="sf")
+```
+
+```{r, echo=FALSE, message=FALSE}
+ggplot() + geom_sf(data = il_trt)+labs(title = "Tracts in Illinois, 2019")
+```
+```{r, include=FALSE}
+il_trt <- left_join(il_trt, acs_data, by="GEOID")
+il_trt <- il_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+```
+
+## 1.1. Chicago Metropolitan Region
+
+The primary aim of this analysis is to understand how households are segregated in the Chicago Metropolitan Region, spanning the following counties
+
+Cook County - 031, DeKalb - 037, DuPage - 043, Grundy - 063, Kane - 089, Kendall - 093, Lake - 097, McHenry - 111  , Will - 197 
+
+Several tracts within the aforementioned counties are uninhabited and are therefore removed from the analysis of housing segregation. 
+
+
+```{r, echo=FALSE}
+chi <- il_trt %>% filter(COUNTYFP %in% c("031", "037", "043", "063", "089", "093", "097", "111", "197"))
+ggplot() + geom_sf(data = chi) + labs(title = "Tracts [with Population] in Chicago Metropolitan Region, 2019")
+```
+# 2. Distribution of Racial Groups
+```{r, include=FALSE}
+co <- chi %>% group_by(COUNTYFP) %>% 
+  summarise(Pop_co=sum(Pop),
+            White_co=sum(White),
+            Black_co=sum(Black),
+            AIAN_co=sum(AIAN),
+            Asian_co=sum(Asian),
+            Latino_co=sum(Latino),
+            Nonwhite_co=sum(Nonwhite))
+```
+
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PWhite)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in Chicago Metropolitan Region by County, 2019")
+```
+It can be observed here that there is a high percentage of white population throughout the metropolitan area, especially towards the Western and Southern parts of the region. Whites represent a majority within the metropolitan region. 
+
+## 2.1. Mapping Racial Minorities In Chicago Metropolitan Region
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PNonwhite)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non Whites in Chicago Metropolitan Region by County, 2019")
+
+```
+There is a significant difference between the number of whites and non-whites in the city. Non-whites are a minority and are mostly present in the Eastern part of the metropolitan region where the white population is comparatively low. 
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PBlack)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Blacks in Chicago Metropolitan Region by County, 2019")
+
+```
+Blacks represent one of the largest minority groups in the area occupying mostly the east and south eastern parts of the region. 
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PLatino)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Latinos in Chicago Metropolitan Region by County, 2019")
+
+```
+Latinos represent the second highest minority, centering in the eastern parts of the Metropolitan region. 
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PAsian)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Asians in Chicago Metropolitan Region by County, 2019")
+
+```
+Asians are less preponderant than Blacks or Latinos and are localized in the eastern parts of the region, along with other persons of colour. 
+
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PAIAN)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of American Indians in Chicago Metropolitan Region by County, 2019")
+
+```
+It is difficult to delineate any particular area within the metropolitan region at this level of resolution where American Indians are most commonly located. They represent the smallest minority group within the city.
+
+## 2.2. Comparing Relative Distribution of Different Racial Groups
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=White_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = White_co), vjust = -0.5)+labs(title = "White Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+The White population is substantially high in the metropolitan region. 
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Nonwhite_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Nonwhite_co), vjust = -0.5)+labs(title = "Non White Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+In general , the population in counties 037, 063 and 093 are substantially low. Highest number of people are found in the city / Cook County - 031, followed by 043. 
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Black_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Black_co), vjust = -0.5)+labs(title = "Black Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+Beyond the city, highest population of black persons is found in 197, followed by 043. 
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Latino_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Latino_co), vjust = -0.5)+labs(title = "Latino at the County Level, Chicago Metropolitan Region, 2019")
+```
+Highest population of Latinos is found in 089, followed by 097. 097 is least inhabited by the white population which signals segregation in the city. Least Latino population is found in 063 which is an overall sparsely populated county. 
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Asian_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Asian_co), vjust = -0.5)+labs(title = "Asian Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+A greater number of Asians are found in 043 along with the Latino population. As the earlier map suggests this area is located on the Eastern part of the metropolitan region. This area also has a white population, although their population is low compared with other counties within the region. 
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=AIAN_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = AIAN_co), vjust = -0.5)+labs(title = "American Indian Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+American Indian population is extremely low throughout the metropolitan region. 043 stands out as the county housing the greatest number of minority persons.
+
+# 3. Understanding Housing Segregation
+
+In order to understand housing segregation, there different measurements are taken. They are dissimilarity, interaction and isolation. There are described below. 
+
+## 3.1. Majority/Minority Dissimilarity
+
+*Dissimilarity* is a common measure of *evenness* between two populations - dissimilarity measures the distribution of a minority population within a majority population. Conceptually, dissimilarity measures the proportion of that minority or subgroup population that would need to move in order to be equally distributed with the majority population. Dissimilarity is calculated as follows:
+
+$D = .5*\sum_i |\frac{b_i}{B}-\frac{w_i}{W}|$
+where
+$b_i$ is the number of blacks in tract *i*
+$B$ is the number of blacks for the county
+$w_i$ is the number of whites in tract *i*
+$W$ is the number of whites for the county
+
+The dissimilarity values for all majority-minority groups are discussed below - 
+```{r, echo=FALSE, message=FALSE}
+chi <- left_join(chi, co %>% st_set_geometry(NULL), by = "COUNTYFP")
+
+dissimilarity_major_minor_NonWhite <- chi %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Black <- chi %>% mutate(dissim_wb = abs(Black / Black_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Black_White = 0.5 * sum(dissim_wb))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Latino <- chi %>% mutate(dissim_lw = abs(Latino / Latino_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Latino_White = 0.5 * sum(dissim_lw))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Asian<- chi %>% mutate(dissim_Asian = abs(Asian / Asian_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Asian_White = 0.5 * sum(dissim_Asian))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_AIAN<- chi %>% mutate(dissim_AIAN = abs(AIAN / AIAN_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_AIAN_White = 0.5 * sum(dissim_AIAN))%>% st_set_geometry(NULL)
+
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor_NonWhite, dissimilarity_major_minor_Black, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_Latino, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_Asian, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_AIAN, by = "COUNTYFP")
+
+rm(dissimilarity_major_minor_AIAN, dissimilarity_major_minor_Asian, dissimilarity_major_minor_Black, dissimilarity_major_minor_Latino, dissimilarity_major_minor_NonWhite)
+knitr::kable(dissimilarity_major_minor)
+```
+Although the highest values for dissimilarity vary across different minority groups (Blacks in 032, Latinos in 097, Asians in 197 and American Indians in 037), the aggregate Nonwhite White dissimilarity is highest in 031. It is lowest in 093, which is one of the most sparsely populated counties. This represents an interesting phenomenon - where there is a greater population [ highest in 031, with approximately 40% non white population], the dissimilarity rates are high. This means that as the population grows, there is a larger tendency for clustering and segregation. 
+
+
+## 3.2. Interaction Between Different Racial Groups
+
+A second common measure of segregation is *interaction* which is a measure of *exposure*. Interaction measures the likelihood of population subgroups interacting with one another based upon their distribution within areal sub units (tracts). For instance, Black-White interaction is calculated as follows:
+
+$Interaction = \sum_i\frac{b_i}{B}*\frac{w_i}{t_i}$
+Where
+$b_i$ is the Black population of tract *i*
+$B$ is the Black population of the county
+$w_i$ is the White population of tract *i*
+$t_i$ is the total population of tract *i*
+
+```{r, echo=FALSE, message=FALSE}
+interact_NonWhite_white <- chi %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL)
+interact_black_white <- chi %>% mutate(interact_bw = abs(Black / Black_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Black_White = sum(interact_bw))%>% st_set_geometry(NULL)
+interact_Latino_white <- chi %>% mutate(interact_lw = abs(Latino / Latino_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Latino_White = sum(interact_lw))%>% st_set_geometry(NULL)
+interact_Asian_white <- chi %>% mutate(interact_aw = abs(Asian / Asian_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Asian_White = sum(interact_aw))%>% st_set_geometry(NULL)
+interact_AIAN_white <- chi %>% mutate(interact_aiw = abs(AIAN / AIAN_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Asian_White = sum(interact_aiw))%>% st_set_geometry(NULL)
+interaction_overall <- left_join(interact_NonWhite_white, interact_black_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_Latino_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_Asian_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_AIAN_white, by = "COUNTYFP")
+
+rm(interact_NonWhite_white, interact_black_white, interact_Latino_white, interact_Asian_white, interact_AIAN_white)
+knitr::kable(interaction_overall)
+```
+Highest interaction between minority and majority groups can be seen in case of county 111. The interactions of Blacks, Asians and American Indians with majority groups is highest in case of county 063. Uniformly across all the minority groups, least interaction is observed in case of 031 which has the highest population. The densest parts of Chicago metropolitan region represent the spaces with least interaction.
+
+## 3.3. Isolation of Minorities
+
+The final measure of racial segregation is *isolation* which is only measured for one group at a time. Isolation measures the likelihood of contact for a subgroup with other subgroup members. It is interpreted similarly to Interaction (as a probability ranging from 0 to 1):
+
+Isolation for Blacks
+$Isolation = \sum_i\frac{b_i}{B}*\frac{b_i}{t_i}$
+Where
+$b_i$ is the Black population of tract *i*
+$B$ is the Black population of the county
+$t_i$ is the total population of tract *i*
+
+```{r, echo=FALSE, message=FALSE}
+isolation_nw <- chi %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL)
+isolation_b <- chi %>% mutate(iso_b = abs(Black / Black_co * Black / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Black_Isolation = sum(iso_b)) %>% st_set_geometry(NULL)
+isolation_l <- chi %>% mutate(iso_l = abs(Latino / Latino_co * Latino / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Latino_Isolation = sum(iso_l)) %>% st_set_geometry(NULL)
+isolation_a <- chi %>% mutate(iso_a = abs(Asian / Asian_co * Asian / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Asian_Isolation = sum(iso_a)) %>% st_set_geometry(NULL)
+isolation_ai <- chi %>% mutate(iso_ai = abs(AIAN / AIAN_co * AIAN / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(AIAN_Isolation = sum(iso_ai)) %>% st_set_geometry(NULL)
+
+isolation_all <- left_join(isolation_nw, isolation_b, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_l, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_a, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_ai, by = "COUNTYFP")
+
+rm(isolation_nw, isolation_b, isolation_l, isolation_a, isolation_ai)
+knitr::kable(isolation_all)
+```
+The values of isolation corroborate the inferences from interaction and dissimilarity. 031 continues to hail as the most segregated part of the metropolitan region, showing very high rates of isolation across non-whites [Blacks, Asians and Latinos]. Lowest isolation is spread across 111, 089, 063 and 093 counties, and do not show a particularly discernable trend [from the above table]. 
+
+# 4. Intersection between Forms of Segregation - Income and Race
+
+The measures of segregation shown above particularly focus on racial groups and their relative distributions across the metropolitan region. Another form of segregation which often coincides with racial segregation is income segregation. We explore the same in this section. 
+
+## 4.1. Income Segregation
+
+A simple measure of income inequality and distribution is to calculate the difference in median income between the county and the census tracts that make up the county.
+
+```{r, include=FALSE}
+rm(county_median_income)
+county_var <- c("S1901_C01_012")
+county_median_income <-
+  get_acs(
+    geography = "county",
+    state = "Illinois",
+    year = 2019,
+    variables = county_var,
+    survey = "acs5",
+    output = "wide"
+  )
+county_median_income <-
+  county_median_income %>% filter(
+    NAME %in% c(
+      "Cook County, Illinois",
+      "DeKalb County, Illinois",
+      "DuPage County, Illinois",
+      "Grundy County, Illinois",
+      "Kane County, Illinois",
+      "Kendall County, Illinois",
+      "Lake County, Illinois",
+      "McHenry County, Illinois",
+      "Will County, Illinois"
+    )
+  )
+county_median_income <-
+  county_median_income %>% mutate(
+    COUNTYFP = case_when(
+      NAME %in% c("Cook County, Illinois") ~ "031",
+      NAME == "DeKalb County, Illinois" ~ "037",
+      NAME == "DuPage County, Illinois" ~ "043",
+      NAME == "Grundy County, Illinois" ~ "063",
+      NAME == "Kane County, Illinois" ~ "089",
+      NAME == "Kendall County, Illinois" ~ "093",
+      NAME == "Lake County, Illinois" ~ "097",
+      NAME == "McHenry County, Illinois" ~ "111",
+      NAME == "Will County, Illinois" ~ "197"
+    )
+  )
+
+county_median_income <- county_median_income %>% rename(Median_Household_Income = S1901_C01_012E) %>% select(GEOID, NAME,Median_Household_Income,COUNTYFP )
+
+chi <- left_join(chi,county_median_income, by="COUNTYFP") 
+chi <- chi %>% mutate(inc_ratio = MHHI/Median_Household_Income)
+```
+
+
+```{r, echo=FALSE}
+ggplot() + geom_sf(data = chi, aes(fill = inc_ratio))
+```
+The map shows that the highest levels of inequality are visible on the eastern parts of the metropolitan region where the proportion of minorities is greatest. The coincidence of income inequality and racial segregation shows that these two forms of discrimination are intersectional. 
+
+## 4.2. Income and Racial Segregation
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() + geom_point(data = chi, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios, 2019", x = "Percent White", y = "Income Ratio")
+```
+The graph shows that the greater the percentage of white population in a neighborhood, the higher the chances of income inequality between whites and minority population groups. 
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+ggplot() + geom_point(data = chi, aes(x = PWhite, y = inc_ratio), na.rm = TRUE) + geom_abline(method = "lm") +
+  labs(title = "Whites v/s Income Ratios for all Chicago Metropolitan region Counties, 2019", x = "Percent White", y = "Income Ratio") +
+  facet_wrap(~ NAME.y, scales = "free") + theme_minimal()
+
+```
+Across all the counties in the Chicago Metropolitan Region, the trend of increasing inequality with the increase in white population follows. The distinction is quite steep in Kendall County.Therefore income inequality rises with racial segregation and follows the same pattern.  
+
+```{r, include=FALSE}
+dissimilarity_major_minor_NonWhite <- chi %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL)
+interact_NonWhite_white <- chi %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL)
+isolation_NonWhite <- chi %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL)
+
+
+income_segregation <- left_join(dissimilarity_major_minor_NonWhite, interact_NonWhite_white, by= "COUNTYFP")
+income_segregation <- left_join(income_segregation,isolation_NonWhite, by= "COUNTYFP")
+income_segregation <- left_join(income_segregation, county_median_income,by = "COUNTYFP" )
+income_segregation <- income_segregation %>% select(COUNTYFP, NAME, Median_Household_Income, dissimilarity_NonWhite_White, interaction_NonWhite_White, NonWhite_Isolation)
+```
+
+
+```{r, echo=FALSE}
+knitr::kable(income_segregation)
+```
+
+The composite analysis between income and indicators of racial segregation consolidate the understanding of housing segregation within the city. Income levels are low where racial minority populations are high. One of the best examples of this is county 031 or Cook county with the highest population, highest segregation and one of the lowest median household incomes. Counties such as 093 and 063, which continue to demonstrate low levels of segregation and greater interaction demonstrate better household incomes and more diverse and stable housing scenario. 
+
+## 4.3. Other Forms of Segregation
+
+The concentration of racial minorities and low income groups in particular high density locations in the Chicago Metropolitan region demonstrate that perhaps there is concentration of poverty and housing segregation in certain parts of the city. It therefore might be interesting to observe the presence or absence of economic opportunities across counties and relate it with the income and race data that is tabulated. Some of the relevant forms of segregation would include - 
+
+1. Occupation based segregation
+2. Educational level/Literacy based segregation
+
+# 5. Conclusions
+In conclusion it can be ascertained that the Metropolitan Region of Chicago demonstrates segregation. Where racial minorities are concentrated, incomes fall and interactions between people decline. Understanding how minorities, despite living in larger communities can be isolated and dissimilar from majority populations opens up a logic for deconcentration of poverty and countering segregation by enabling a greater spatial distribution of opportunity. 
+
+# Acknowledgements
+The definitions for segregation indicators and the outline for the markdown notebook has been borrowed directly from Lab 13 Notebook for UP 494 Neighborhood Analysis. I express my heartfelt gratitude to Dr. Andrew Greenlee for facilitating the same. 
