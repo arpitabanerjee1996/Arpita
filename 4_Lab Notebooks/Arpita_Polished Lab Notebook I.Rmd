@@ -1,0 +1,428 @@
+---
+title: "Mapping and Measuring Residential Segregation"
+author: "Arpita Banerjee."
+date: "3/19/2021"
+output:
+  pdf_document:
+    toc: yes
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  include: FALSE
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include = FALSE, message=FALSE}
+rm(list=ls())
+#census_api_key("936c96236b979ae522c6cf67edb51923cd391fb3")
+
+knitr::opts_chunk$set(echo = FALSE)
+
+library(tidyverse)
+library(tidycensus)
+library(sf)
+library(tigris)
+
+
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+```
+
+# 1. Introduction 
+
+The data used in the following analysis has been taken from the US Census Bureau, American Community Survey for 5 year periods. It is based on the tables described below. All the tables have been directly imported into R through Tidycensus – 
+| ACS Table | Variables                | Label    | Description                                            |
+|-----------|--------------------------|----------|--------------------------------------------------------|
+| B01001    | B01001_001E              | Pop      | Total Population                                       |
+| B02001    | B02001_002E              | White    | Count of White Population                              |
+| B02001    | B02001_003E              | Black    | Count of Black Population                              |
+| B02001    | B02001_004E              | AIAN     | Count of American Indian and Alaskan Native Population |
+| B02001    | B02001_005E              | Asian    | Count of Asian Population                              |
+| B02001    | B02001_001E, B02001_002E | Nonwhite | Count of Nonwhite Population                           |
+| B03001    | B03001_003E              | Latino   | Count of Latino Population                             |
+| B19013    | B19013_001E              | MHHI     | Median Household Income                                |
+
+```{r, echo=FALSE, message=FALSE}
+#Downloading tract level spatial data
+il_trt <- tracts(state="IL", class="sf")
+ggplot() + geom_sf(data = il_trt)+labs(title = "Tracts in Illinois, 2019")
+il_trt <- left_join(il_trt, acs_data, by="GEOID")
+il_trt <- il_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+```
+
+## 1.1. Chicago Metropolitan Region
+
+The primary aim of this analysis is to understand how households are segregated in the Chicago Metropolitan Region, spanning the following counties
+| County  | FIPS |
+|---------|------|
+| Cook    | 031  |
+| DeKalb  | 037  |
+| DuPage  | 043  |
+| Grundy  | 063  |
+| Kane    | 089  |
+| Kendall | 093  |
+| Lake    | 097  |
+| McHenry | 111  |
+| Will    | 197  |
+Several tracts within the aforementioned counties are uninhabited and are therefore removed from the analysis of housing segregation described below. 
+```{r, echo=FALSE}
+chi <- il_trt %>% filter(COUNTYFP %in% c("031", "037", "043", "063", "089", "093", "097", "111", "197"))
+ggplot() + geom_sf(data = chi) + labs(title = "Tracts [with Population] in Chicago Metropolitan Region, 2019")
+```
+# 2. Distribution of Racial Groups
+```{r, echo=FALSE}
+co <- chi %>% group_by(COUNTYFP) %>% 
+  summarise(Pop_co=sum(Pop),
+            White_co=sum(White),
+            Black_co=sum(Black),
+            AIAN_co=sum(AIAN),
+            Asian_co=sum(Asian),
+            Latino_co=sum(Latino),
+            Nonwhite_co=sum(Nonwhite))
+
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PWhite)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in Chicago Metropolitan Region by County, 2019")
+```
+
+## 2.1. Mapping Racial Minorities In Chicago Metropolitan Region
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PNonwhite)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non Whites in Chicago Metropolitan Region by County, 2019")
+
+```
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PBlack)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Blacks in Chicago Metropolitan Region by County, 2019")
+
+```
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PLatino)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Latinos in Chicago Metropolitan Region by County, 2019")
+
+```
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PAsian)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Asians in Chicago Metropolitan Region by County, 2019")
+
+```
+
+```{r, echo=FALSE}
+ggplot() + 
+  geom_sf(data = chi, aes(fill = PAIAN)) + scale_fill_gradient(low = "0.00", high = "1.00") + 
+  geom_sf(data = co,
+          colour = "RED",
+          fill = NA) + labs(title = "% of American Indians in Chicago Metropolitan Region by County, 2019")
+
+```
+## 2.2. Comparing Relative Distribution of Different Racial Groups
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=White_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = White_co), vjust = -0.5)+labs(title = "White Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Nonwhite_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Nonwhite_co), vjust = -0.5)+labs(title = "Non White Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Black_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Black_co), vjust = -0.5)+labs(title = "Black Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Latino_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Latino_co), vjust = -0.5)+labs(title = "Latino at the County Level, Chicago Metropolitan Region, 2019")
+```
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=Asian_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = Asian_co), vjust = -0.5)+labs(title = "Asian Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+
+```{r, echo=FALSE}
+co %>% ggplot(aes(y=AIAN_co, x=COUNTYFP))+geom_col()+theme_minimal()+ geom_text(aes(label = AIAN_co), vjust = -0.5)+labs(title = "American Indian Population at the County Level, Chicago Metropolitan Region, 2019")
+```
+# 3. Understanding Housing Segregation
+```{r, echo=FALSE}
+
+```
+## 3.1. Majority/Minority Dissimilarity
+```{r, echo=FALSE, message=FALSE}
+chi <- left_join(chi, co %>% st_set_geometry(NULL), by = "COUNTYFP")
+
+dissimilarity_major_minor_NonWhite <- chi %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Black <- chi %>% mutate(dissim_wb = abs(Black / Black_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Black_White = 0.5 * sum(dissim_wb))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Latino <- chi %>% mutate(dissim_lw = abs(Latino / Latino_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Latino_White = 0.5 * sum(dissim_lw))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_Asian<- chi %>% mutate(dissim_Asian = abs(Asian / Asian_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_Asian_White = 0.5 * sum(dissim_Asian))%>% st_set_geometry(NULL)
+dissimilarity_major_minor_AIAN<- chi %>% mutate(dissim_AIAN = abs(AIAN / AIAN_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_AIAN_White = 0.5 * sum(dissim_AIAN))%>% st_set_geometry(NULL)
+
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor_NonWhite, dissimilarity_major_minor_Black, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_Latino, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_Asian, by = "COUNTYFP")
+dissimilarity_major_minor <- left_join(dissimilarity_major_minor, dissimilarity_major_minor_AIAN, by = "COUNTYFP")
+
+rm(dissimilarity_major_minor_AIAN, dissimilarity_major_minor_Asian, dissimilarity_major_minor_Black, dissimilarity_major_minor_Latino, dissimilarity_major_minor_NonWhite)
+knitr::kable(dissimilarity_major_minor)
+```
+## 3.2. Interaction Between Different Racial Groups
+```{r, echo=FALSE, message=FALSE}
+interact_NonWhite_white <- chi %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL)
+interact_black_white <- chi %>% mutate(interact_bw = abs(Black / Black_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Black_White = sum(interact_bw))%>% st_set_geometry(NULL)
+interact_Latino_white <- chi %>% mutate(interact_lw = abs(Latino / Latino_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Latino_White = sum(interact_lw))%>% st_set_geometry(NULL)
+interact_Asian_white <- chi %>% mutate(interact_aw = abs(Asian / Asian_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Asian_White = sum(interact_aw))%>% st_set_geometry(NULL)
+interact_AIAN_white <- chi %>% mutate(interact_aiw = abs(AIAN / AIAN_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_Asian_White = sum(interact_aiw))%>% st_set_geometry(NULL)
+interaction_overall <- left_join(interact_NonWhite_white, interact_black_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_Latino_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_Asian_white, by = "COUNTYFP")
+interaction_overall <- left_join(interaction_overall, interact_AIAN_white, by = "COUNTYFP")
+
+rm(interact_NonWhite_white, interact_black_white, interact_Latino_white, interact_Asian_white, interact_AIAN_white)
+knitr::kable(interaction_overall)
+```
+## 3.3. Isolation of Minorities
+```{r, echo=FALSE, message=FALSE}
+isolation_nw <- chi %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL)
+isolation_b <- chi %>% mutate(iso_b = abs(Black / Black_co * Black / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Black_Isolation = sum(iso_b)) %>% st_set_geometry(NULL)
+isolation_l <- chi %>% mutate(iso_l = abs(Latino / Latino_co * Latino / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Latino_Isolation = sum(iso_l)) %>% st_set_geometry(NULL)
+isolation_a <- chi %>% mutate(iso_a = abs(Asian / Asian_co * Asian / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(Asian_Isolation = sum(iso_a)) %>% st_set_geometry(NULL)
+isolation_ai <- chi %>% mutate(iso_ai = abs(AIAN / AIAN_co * AIAN / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(AIAN_Isolation = sum(iso_ai)) %>% st_set_geometry(NULL)
+
+isolation_all <- left_join(isolation_nw, isolation_b, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_l, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_a, by = "COUNTYFP")
+isolation_all <- left_join(isolation_all, isolation_ai, by = "COUNTYFP")
+
+rm(isolation_nw, isolation_b, isolation_l, isolation_a, isolation_ai)
+knitr::kable(isolation_all)
+```
+# 4. Intersectionality between Forms of Segregation - Income and Race
+```{r, echo=FALSE}
+
+```
+## 4.1. Income Segregation
+```{r, echo=FALSE}
+rm(county_median_income)
+county_var <- c("S1901_C01_012")
+county_median_income <-
+  get_acs(
+    geography = "county",
+    state = "Illinois",
+    year = 2019,
+    variables = county_var,
+    survey = "acs5",
+    output = "wide"
+  )
+county_median_income <-
+  county_median_income %>% filter(
+    NAME %in% c(
+      "Cook County, Illinois",
+      "DeKalb County, Illinois",
+      "DuPage County, Illinois",
+      "Grundy County, Illinois",
+      "Kane County, Illinois",
+      "Kendall County, Illinois",
+      "Lake County, Illinois",
+      "McHenry County, Illinois",
+      "Will County, Illinois"
+    )
+  )
+county_median_income <-
+  county_median_income %>% mutate(
+    COUNTYFP = case_when(
+      NAME %in% c("Cook County, Illinois") ~ "031",
+      NAME == "DeKalb County, Illinois" ~ "037",
+      NAME == "DuPage County, Illinois" ~ "043",
+      NAME == "Grundy County, Illinois" ~ "063",
+      NAME == "Kane County, Illinois" ~ "089",
+      NAME == "Kendall County, Illinois" ~ "093",
+      NAME == "Lake County, Illinois" ~ "097",
+      NAME == "McHenry County, Illinois" ~ "111",
+      NAME == "Will County, Illinois" ~ "197"
+    )
+  )
+
+county_median_income <- county_median_income %>% rename(Median_Household_Income = S1901_C01_012E) %>% select(GEOID, NAME,Median_Household_Income,COUNTYFP )
+
+chi <- left_join(chi,county_median_income, by="COUNTYFP") 
+chi <- chi %>% mutate(inc_ratio = MHHI/Median_Household_Income)
+ggplot() + geom_sf(data = chi, aes(fill = inc_ratio))
+```
+
+## 4.2. Income and Racial Segregation
+```{r, echo=FALSE}
+ggplot() + geom_point(data = chi, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios, 2019", x = "Percent White", y = "Income Ratio")
+```
+
+```{r, echo=FALSE}
+ggplot() + geom_point(data = chi, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Whites v/s Income Ratios for all Chicago Metropolitan region Counties, 2019", x = "Percent White", y = "Income Ratio") +
+  facet_wrap(~ NAME.y, scales = "free") + theme_minimal()
+
+```
+
+```{r, echo=FALSE}
+dissimilarity_major_minor_NonWhite <- chi %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL)
+interact_NonWhite_white <- chi %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  group_by(COUNTYFP) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL)
+isolation_NonWhite <- chi %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>%
+  group_by(COUNTYFP) %>% summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL)
+
+
+income_segregation <- left_join(dissimilarity_major_minor_NonWhite, interact_NonWhite_white, by= "COUNTYFP")
+income_segregation <- left_join(income_segregation,isolation_NonWhite, by= "COUNTYFP")
+income_segregation <- left_join(income_segregation, county_median_income,by = "COUNTYFP" )
+income_segregation <- income_segregation %>% select(COUNTYFP, NAME, Median_Household_Income, dissimilarity_NonWhite_White, interaction_NonWhite_White, NonWhite_Isolation)
+
+knitr::kable(income_segregation)
+```
+
+
+
+## 4.3. Other Forms of Segregation
+
+# 5. Conclusions
+
