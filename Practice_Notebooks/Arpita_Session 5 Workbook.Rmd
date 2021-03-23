@@ -1,0 +1,456 @@
+---
+title: "Introduction to Data Visualization with GGPlot"
+author: "Andrew J. Greenlee, Ph.D., solved by Arpita Banerjee"
+date: "2/9/2021"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+  html_notebook:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction
+## Goals
+
+- Learn the basics of `ggplot`s grammar of graphics
+- Learn to structure data for visualization
+- Make a few basic maps
+- Use maps as a strategy for exploratory data analysis
+
+Before you start this lab, you should be familiar with content in Keiran Healy's book [Data Visualization: A Practical Introduction](https://socviz.co), Chapters 3 and 4.
+
+## Getting Set Up
+As a reminder, R Notebooks make use of [Markdown formatting](https://pandoc.org/MANUAL.html#pandocs-markdown) which you can use to help organize your own work and notes. RStudio also has a ["cheat sheet"](https://rmarkdown.rstudio.com/lesson-15.html) to help you quickly get up to speed with some of the available options for formatting your R Notebooks. 
+
+Let's jump right in!
+
+# GGplot and the Grammar of Graphics
+
+Remember when I told you that this was partially a language class? The primary tool you will use to visualize data, `GGplot`, is built upon a *grammar of graphics*.
+
+```{r}
+knitr::include_graphics("images/1_Grammar.png")
+```
+
+Let's examine this layered grammar of graphics starting at the bottom and working toward the top.
+
+**Data**: The basis upon which we construct our plots is logically your data. The first thing we will point GGPlot to is your data. We will use `data =` to specify our data object to visualize.
+
+**Aesthetic Mappings**: Aesthetic Mappings tell R some of the fundamental things about how it should visualize our data - what variables (columns) should go on the x or y axis, whether any values should be grouped together, etc. We use `aes()` as a container to specify aesthetic mappings.
+
+**Geometries**: After we have identified our data and aesthetic mappings, we need to tell R how we would like our data visualized. Here are just a few examples of the many geometries that we can use to visualize elements of our data:
+
+```{r}
+knitr::include_graphics("images/2_Geoms.png")
+```
+**Facets**: Facets allow us to (optionally) split our plot into a multiple subsets, typically based upon some characteristic or a categorical variable within our data.
+
+**Statistics**: Statistics allow us to show some summaries or indicators of the distribution of our data including central tendency and dispersion.
+
+**Coordinates**: Our visualization could be based upon one of several coordinate systems (e.g. cartesian, polar, etc.), and we may need to specify this. 
+
+**Theme**: Themes are collections of options that tells R how to draw a plot. They can help us efficiently style elements of our plot for legibility or to present a standardized format alongside other plots or visualizations.
+
+## The Data
+
+Let's continue working with our Opportunity Zone dataset - as a reminder, this dataset contains basic information on those census tracts in the U.S. that were designated as Opportunity Zones as part of the federal Tax Cuts and Jobs Act. Designated tracts can receive special incentives to spur development and private capital investments through favorable tax breaks to investors. Eligible tracts met broad standards for disinvestment. A major question is whether state governments selected the most needy tracts to designate as Opportunity Zones.
+
+A copy of the Urban Institute's dataset (which contains the underlying data for this map as well as some other analysis) is downloaded and is in the "data" folder as part of this lab's project.
+
+## Load The Data
+
+Read the Excel data into R and place it into an object called "ozs" (remember that you will need the `readxl` package for this):
+```{r}
+# Your Work Here
+library(tidyverse)
+library(readxl)
+library(ggplot2)
+ozs <- read_excel("data/urbaninstitute_tractlevelozanalysis_update1242018.xlsx")
+```
+
+While we're at it, let's recode our Designated column (as you've done before) to replace NA values with 0. Start to pay attention to how this works - it will come in handy later in the lab:
+```{r}
+ozs <- ozs %>% mutate(Designated = ifelse(is.na(Designated), 0, Designated) )
+```
+
+We could also choose to turn our Designated column into a *factor* which includes labels for the two values which Designated takes:
+```{r}
+ozs <- ozs %>% mutate(Designated = factor(Designated, label = c("Not Designated", "Designated")))
+```
+
+# Your First Plots
+
+## Visualizing One Dimension
+
+```{r}
+ggplot(data = ozs, aes(x = medhhincome2014_tract))+ geom_histogram()
+```
+What's going on here? Let's relate this back to our grammatical components.
+
+First, we called GGplot `ggplot()` to initiate a plot object.
+
+- **Data**: `data = ozs`. We specify that the data for our plot os coming from the ozs dataset.
+- **Aesthetics**: `aes(x=medhhincome2014_tract)` We specify that data plotted on the x axis will come from the medhhincome2014_tract (median household income) column.
+- **Geometries**: `+ geom_histogram()` we specified that we would like to make a histogram using the values specified in our aesthetic mapping (in this case, the median household income). Other aspects for the histogram will follow defaults unless we choose to change them.
+
+We can add to these basic building blocks if we wish.
+
+### Changing the Color
+
+Start by changing the color of the histogram shading. Use the `fill = "color"` option to shade the histogram bars red. Where would you need to put this option to get it to apply to the histogram bars?
+
+```{r}
+# Your Work Here
+ggplot(data = ozs, aes(x = medhhincome2014_tract, fill = "red"))+geom_histogram()
+```
+### Changing geometry-specific options
+
+Note the information message at the top of the histogram: ``stat_bin()` using `bins = 30`. Pick better value with `binwidth`.`
+
+Try manually modifying the width of the histogram bins (right now it is split into 30 equally sized bars). Remember that binwidth is based on the values of the data (in this case, for instance, a binwidth of 2500 would be $2,500):
+
+```{r}
+ggplot(data = ozs, aes(x = medhhincome2014_tract))+geom_histogram(fill = "red", binwidth = 2500)
+```
+
+### Modifying Labels
+
+Now's a good time for us to polish our labels. `labs()` allows us to specify elements of the plot labels.
+
+```{r}
+ggplot(data = ozs, aes(x = medhhincome2014_tract))+geom_histogram(fill = "red", binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution",
+       x = "Median Household Income",
+       y = "Tracts")
+```
+
+### Applying a Theme
+
+Now let's try applying a theme. As a reminder, themes allow us to change collections of formatting options all at once (we can also change any of these features manually). Try out a few themes to see which one you like (for example, the plot below applied theme_minimal()):
+
+- theme_dark()
+- theme_minimal()
+- theme_classic()
+- theme_void()
+- Check out the [this list](https://yutannihilation.github.io/allYourFigureAreBelongToUs/) for even more GGPlot theme choices contained within other R packages
+```{r}
+ggplot(data=ozs, aes(x=medhhincome2014_tract))+
+  geom_histogram(fill = "red", binwidth = 2500) +
+  labs(title = "Eligible Tract Income Distribution", x="Median Household Income ($)", y= "Tracts")+
+  theme_minimal()
+
+#or
+
+ozs %>% ggplot(aes(x = medhhincome2014_tract))+geom_histogram(fill = "red", binwidth = 2500)+
+                 labs(title = "Eligible Tract Income Distribution",
+                      x = "Median Household Income",
+                      y = "Tracts")+theme_minimal()
+```
+
+### Multiple Series
+
+Rather than manually specifying the color of the plot, we could ask ggplot to create multiple series based upon our data. Let's use the Designated variable to create separate series for our designated or not designated tracts:
+
+```{r}
+ggplot(data=ozs, aes(x=medhhincome2014_tract, fill = Designated))+
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x="Median Household Income ($)", y= "Tracts")+
+  theme_minimal()
+
+#or
+
+ozs %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_histogram(bindwidth = 2500)+ 
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income", y = "Tracts")+
+  theme_minimal()
+```
+Now we can see some of the differences in the distribution of tract incomes by whether the tract was designated an Opportunity Zone or not. Why are the values for the Designated series so much shorter than that for the not designated tracts?
+
+### Faceting
+
+Recall that faceting is one of our higher level grammatical options for plots. Facets create multiple plots from subsets of the data. Let's try faceting by state:
+
+```{r}
+ggplot(data=ozs, aes(x=medhhincome2014_tract, fill = Designated))+
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x="Median Household Income ($)", y= "Tracts")+
+  theme_minimal()+
+  facet_wrap(~ state)
+
+#or
+
+ozs %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated))+
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y= "Tracts")+
+  theme_minimal()+
+  facet_wrap(~state)
+```
+Whoa - that's a lot of plots! `facet_wrap(~ state)` tells ggplot we want to use the state variable in the ozs dataset to facet our data - they're too small for us to read, but there's data there. One thing we might do is to select a subset of data to focus in on to more effectively utilize our faceting strategy. Let's select out designated tracts within midwestern states (Illinois, Indiana, Iowa, Kansas, Michigan, Minnesota, Missouri, Nebraska, North Dakota, Ohio, South Dakota, Wisconsin):
+
+```{r}
+ggplot(data=ozs %>% filter(state %in% c("Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin")), aes(x=medhhincome2014_tract, fill = Designated))+
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x="Median Household Income ($)", y= "Tracts")+
+  theme_minimal()+
+  facet_wrap(~ state)
+
+#or
+
+ozs %>% filter(state %in% c ("Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()+facet_wrap(~state)
+```
+This is definitely more legible, but some states are hard to see because the number of tracts within each bin is very small compared to others (compare North Dakota to Ohio, for instance). By default, the scales in our facets are fixed based upon the minimum and maximum in the dataset. In our facet command, add the option `scales = "free"` and see what happens.
+```{r}
+# Your Work Here
+
+ozs %>% filter(state %in% c ("Illinois", "Indiana", "Iowa", "Kansas", "Michigan", "Minnesota", "Missouri", "Nebraska", "North Dakota", "Ohio", "South Dakota", "Wisconsin")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_histogram(binwidth = 2500)+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()+facet_wrap(~state, scales = "free")
+```
+You should now see the facet scales change to reflect the minimums and maximums across each state's distribution of values.
+
+### Your turn
+
+Try experimenting with some other 1-variable plots such as:
+
+- geom_boxlot()
+- geom_dotplot()
+- geom_bar()
+- geom_density()
+
+```{r}
+# Boxplot
+ozs %>% filter(state %in% c ("Illinois")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_boxplot()+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()
+```
+```{r}
+#geom_dotplot
+ozs %>% filter(state %in% c ("Illinois")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_dotplot(binwidth = 1250)+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()
+```
+```{r}
+#geom_bar
+ozs %>% filter(state %in% c ("Illinois")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_bar()+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()
+```
+
+```{r}
+#geom_density
+
+ozs %>% filter(state %in% c ("Illinois")) %>% ggplot(aes(x = medhhincome2014_tract, fill = Designated)) + 
+  geom_density()+
+  labs(title = "Eligible Tract Income Distribution", x = "Median Household Income ($)", y = "Tracts")+
+  theme_minimal()
+```
+
+## Visualizing Two Dimensions
+
+Now that you're getting the hang of creating your own plots, let's explore how to create a plot with two dimensions.
+
+Let's start off with a scatter plot. A scatter point represents data in two dimensions by marking a dot at the corresponding values along the x and y axis for each observation. Make a scatterplot `geom_point()` that visualizes the relationship between median household income (medhhincome2014_tract) and the proportion of the population with a Bachelor's degree or higher (BAorhigher):
+```{r}
+# Your Work Here
+ozs %>% ggplot(aes(x = medhhincome2014_tract, y = BAorhigher))+geom_point()
+
+```
+
+Now visualize the plot using different colors based upon whether the tract is designated as an Opportunity Zone or not:
+
+```{r}
+# Your Work Here
+ozs %>% ggplot(aes(x=medhhincome2014_tract, y = BAorhigher, colour = Designated))+geom_point()
+```
+We have a lot of *overplotting* going on here with the points lying on top of each other so that it's hard to see whether there are specific trends in the data. Let's change the size and transparency for our points by adding in the options `alpha=.2` and `size = .5`
+```{r}
+# Your Work Here
+ozs %>% ggplot(aes(x=medhhincome2014_tract, y=BAorhigher, colour = Designated))+geom_point(alpha = .2, size = .5)
+```
+That helps some, but it's still hard to tell what's going on here.
+
+### Add a Statistic
+
+Let's fit a line to the data to see what's going on a little bit better. This allows us to utilize a statistic, in this case, `stat_smooth()`. Let's fit a linear model (line of best fit) to our data by specifying method = "lm" (e.g. stat_smooth(method="lm"):
+
+```{r}
+# Your Work Here
+ozs %>% ggplot(aes(x = medhhincome2014_tract, y = BAorhigher, colour = Designated))+geom_point(alpha = 0.2, size = 0.5)+stat_smooth(method = "lm")
+```
+GGplot fits lines to each of our distributions of data based upon whether they fall in the Designated or Not Designated categories.
+
+Based upon what you see here, how would you describe the relationship between income and higher education in designated versus undesignated eligible census tracts?
+
+### Try some formatting
+
+Now explore some options for cleaning up this plot. Apply themes and labels to make it look nicer. Google about the use of scales so that you can format the x axis in dollars and the y axis in percent.
+
+```{r}
+# Your Work Here
+ggplot(data = ozs, aes(x = medhhincome2014_tract, y = BAorhigher, color = Designated))+geom_point(alpha = 0.2, size = 0.5)+stat_smooth(method = "lm")+labs(title = "Relationship between Median Household Income and College Education", x = "Median Household Income", y = "% population with BA or Higher Degrees", color = "Designation Status")+scale_x_continuous(labels = scales::percent_format())+scale_y_continuous(labels = scales::dollar_format())+theme_classic()
+```
+
+# Extend your work
+
+At the end of the last lab, you were asked to explore questions related to the following:
+
+1. The racial composition and characteristics of designated and not-designated tracts
+2. Differences in poverty rate for designated Opportunity Zones in metropolitan, micropolitan, and non-CBSA areas.
+3. The age dependence ratio for designated and non-designated tracts
+4. Average poverty and income for tracts based upon their level of investment flows
+
+Let's think about how we could explore these questions using some of our new-found data visualization strategies.
+
+1. Make a series of kernel density plots (see Healy 4.6 for reference) that visualize differences in the racial compositions of census tracts. Try experimenting with the default and proportional density options for your y axis:
+
+```{r}
+# Your Work Here
+ggplot(data=ozs, aes(x=pctwhitealone, color = Designated))+
+  geom_density(aes(y=..scaled..))
+
+# or 
+
+ozs%>%ggplot(aes(x = pctwhitealone, color = Designated))+geom_density(aes(y = ..scaled..))
+```
+```{r}
+ggplot(data=ozs, aes(x=pctblackalone, color = Designated))+
+  geom_density()
+
+# or 
+
+ozs %>% ggplot(aes(x=pctblackalone, color = Designated))+geom_density(aes(y = ..scaled..))
+```
+```{r}
+ozs %>% ggplot(aes(x=pctHispanic, color = Designated))+
+  geom_density(aes(y = ..scaled..))
+```
+```{r}
+ggplot(data=ozs, aes(x=pctAAPIalone, color = Designated))+
+  geom_density(aes(y=..scaled..))
+```
+
+
+What insights can you glean about the racial composition of designated and non-designated tracts?
+
+2. Next, let's look at the differences in poverty rate for Designated and not-Designated tracts. Use faceting to make a histogram series that shows differences in the distribution of poverty rates designated and not designated tracts using metropolitan status as a faceting variable. I've included some code to create a new variable called "Metro_Type" that includes whether a tract is Metropolitan, Micropolitan, or Non CBSA (neither Metropolitan or Micropolitan) - you can build upon this to create your visualization.
+
+```{r}
+# Your Work Here
+
+ozs %>% mutate(Metro = ifelse(Metro == 1, "Metropolitan", NA),
+               Micro = ifelse(Micro == 1, "Micropolitan", NA),
+               NoCBSAType = ifelse(NoCBSAType ==1, "Non CBSA", NA),
+               Metro_Type = case_when(Metro == "Metropolitan" ~ "Metropolitan",
+                                      Micro =="Micropolitan"~"Micropolitan",
+                                      NoCBSAType == "Non CBSA" ~ "Non CBSA"))
+ggplot(data = ozs, aes(x = PovertyRate, fill = Designated))+geom_histogram()+facet_wrap(~Metro_Type)
+```
+
+3. Create a boxplot that visualizes the distribution of age dependence ratios for designated and non-designated census tracts for midwestern states (). **Reminder**: The age dependence ratio is the proportion of the population under 18 or over 64 compared to the population between 18 and 64. In our dataset, we have the proportion under 18 (pctunder18) and the proportion over 64 (pctover64)
+
+```{r}
+# Your Work Here
+
+ozs <- ozs %>% mutate(Dependency_Ratio = (pctunder18+pctover64)/(1-pctunder18-pctover64))
+
+ozs %>% filter(state %in% c("Illinois")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Indiana")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Iowa")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Kansas")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Michigan")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Minnesota")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Missouri")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Nebraska")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("North Dakota")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("South Dakota")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Ohio")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+ozs %>% filter(state %in% c("Wisconsin")) %>% ggplot(aes(x=Dependency_Ratio, fill=Designated))+geom_boxplot()
+
+```
+
+4. Let's explore the relationship between investments and poverty rate (as a reminder you can read more about the investment scores [here](https://www.urban.org/sites/default/files/publication/98445/did_states_maximize_their_opportunity_zone_selections_7.pdf)). Start by making a summary table of of the average poverty rate by Investment Score (dec_score):
+
+```{r}
+# Your Work Here
+ozs %>% group_by(dec_score) %>% summarise(PovertyRate = mean(PovertyRate, na.rm = TRUE)) %>% ggplot(aes(x = dec_score, y = PovertyRate)) + geom_col()
+```
+In the Healy text, you learned about some of the features of geom_bar (section 4.5). Let's use a related geometry, geom_col() to represent our summarized average poverty rates by the investment score (Investment Score on X axis, Poverty Rate on Y axis):
+
+```{r}
+# Your Work Here
+ozs %>% group_by(dec_score) %>% summarise(PovertyRate = mean(PovertyRate, na.rm = TRUE)) %>% ggplot(aes(x = dec_score, y = PovertyRate)) + geom_col()
+```
+
+Now think about what some things are that we might want to do to clean up this plot:
+- Remove the column reporting NA values for dec_score
+- Get ggplot to treat the x axis as categorical (rather than continuous)
+- Add descriptive labels
+- Remove excess shading by selecting an appropriate theme
+- Change the color of the fill on the bars to a different color
+```{r}
+# Your Work Here
+
+ozs %>% 
+  filter(!is.na(dec_score)) %>% 
+  group_by(dec_score) %>% 
+  summarise(PovertyRate = mean(PovertyRate, na.rm=TRUE)) %>% 
+  ggplot(aes(x=as.factor(dec_score), y=PovertyRate))+
+  geom_col(fill = "gray80")+
+  labs(Title = "Poverty Rate by Investment Score", x = "Investment Score", y="Average Poverty Rate", caption = "Source: Urban Institute")+
+  theme_classic()
+
+
+```
+
+Now let's try visualizing the same data using a different strategy - kernel density plots. As a reminder, kernel density plots are like a continuous histogram (with smoothed curves instead of bins for data). Make a kernel density plot for the distribution of poverty rate, with different series defined by each investment score category.
+
+```{r}
+ozs %>% 
+  filter(!is.na(dec_score)) %>% 
+  ggplot(aes(x=PovertyRate, group=dec_score, color=as.factor(dec_score)))+geom_density()
+
+ozs %>% filter(!is.na(dec_score)) %>% ggplot(aes(x = PovertyRate, group = dec_score, color = as.factor(dec_score)))+geom_density()
+```
+
+There's some useful information here- clearly as investment potential is related to the poverty rate. How could we simplify this plot to help with legibility? One strategy would be to classify the investment scores into "Low", "Medium", and "High" categories. Here's some code that does just that. Build a kernel density plot plot using the revised categories contained in the new variable, "Investment":
+
+```{r}
+# Your Work Here
+
+ozs %>% mutate(dec_score = as.character(dec_score), 
+               Investment = case_when( dec_score %in% c("1", "2", "3") ~ "Low",
+                                       dec_score %in% c("4", "5", "6", "7") ~ "Medium",
+                                       dec_score %in% c("8", "9", "10") ~ "High",
+                                       TRUE ~ "No Score") ) %>% filter(!is.na(dec_score)) %>% ggplot(aes(x = PovertyRate, group = dec_score, color = as.factor(dec_score)))+geom_density()
+```
+
+That's certainly a little better and helps us to see some of the differences between low, medium, and high levels of prior investment.
+
+Congratulations! You are now immersed in GGplot - it will take some time to get used to the logic, but as you do become more familiar, you will be able to create many different types of data visualizations with relative ease. You will also know your data a lot better through the process of visualizing it.
+
+For some inspiration at some options, take a look [here](https://www.r-graph-gallery.com/ggplot2-package.html).
