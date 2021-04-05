@@ -262,6 +262,13 @@ column_spec(race,c(2,3,4,5,6,7,8,9,10,11), border_left="0.5px solid gray", borde
 
 ```{r}
 #Graphs
+Race_Comparison %>% ggplot(aes(y=pop_tot, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = pop_tot), vjust = -0.5)+labs(title = "Total Population across 3 Major Cities, 2017")
+```
+```{r}
+Race_Comparison %>% ggplot(aes(y=(100-percentpop_white), x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = (100-percentpop_white)), vjust = -0.5)+labs(title = "Percentage Population of Non-Whites across 3 Major Cities, 2017")
+```
+```{r}
+Race_Comparison %>% ggplot(aes(y=percentpop_black, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = percentpop_black), vjust = -0.5)+labs(title = "Percentage of Black Population across 3 Major Cities, 2017")
 ```
 
 ## Age
@@ -486,6 +493,7 @@ column_spec(age,c(2,3), border_left="0.5px solid gray", border_right="0.5px soli
 
 ```{r}
 #Graphs
+Age_Comparison %>% ggplot(aes(y=Population_Per_Category, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Population in different age categories across 3 Major Cities, 2017") 
 ```
 
 ## Female Occupied Households
