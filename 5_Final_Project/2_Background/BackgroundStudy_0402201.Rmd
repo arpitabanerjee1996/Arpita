@@ -1,5 +1,5 @@
 ---
-title: "BackgroundStudy_04022021 Version 1.1"
+title: "BackgroundStudy_04022021 Version 1.2"
 author: "Arpita Banerjee."
 date: "4/02/2021"
 output:
@@ -23,11 +23,14 @@ library(kableExtra)
 library(tidyverse)
 library(tidycensus)
 library(ggplot2)
+library(sf)
+library(tigris)
 census_api_key("9c5c7647c70b95cd0063a955fabbbf7c0970aa6d")
 ```
 ## Version
 1.0 - 04/02/2021
 1.1- 04/03/2021
+1.2- 10/03/2021
 
 ## Introduction
 
@@ -2194,5 +2197,640 @@ column_spec(rent_burden,c(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19), border
 # Graph
 ```
 
+## Housing Segregation 
+## Racial Segregation in Chicago
+```{r,include = FALSE, message=FALSE}
+#Chicago
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+il_trt <- tracts(state="IL", class="sf")
+il_trt <- left_join(il_trt, acs_data, by="GEOID")
+il_trt <- il_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+chi_boundary<-places(state="Illinois", class="sf") %>% filter(NAME == "Chicago")
+chi_trt<-il_trt %>% filter(st_contains(chi_boundary,il_trt, sparse = FALSE))
+ggplot() + 
+  geom_sf(data = chi_trt, colour = "light gray", fill = NA) +
+  geom_sf(data = chi_boundary, colour = "dark gray", fill = NA)+theme_minimal()
+
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in Chicago, 2019")+theme_minimal()
+```
+
+```{r,include = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in Chicago, 2019")+theme_minimal()
+```
+
+```{r,include = FALSE, message=FALSE}
+#Graphing Segregation
+
+ggplot(data= chi_trt)+geom_col(aes(x=NAME, y=PWhite))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "White Population in Chicago as per Tracts, 2019")
+
+```
+
+```{r,include = FALSE, message=FALSE}
+ggplot(data= chi_trt)+geom_col(aes(x=NAME, y=PNonwhite))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in Chicago as per Tracts, 2019")
+```
+
+## Racial Segregation in New York City
+```{r,include = FALSE, message=FALSE}
+#New York City
+#Downloading census data
+rm(list = ls())
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ny_trt <- tracts(state="NY", class="sf")
+ny_trt <- left_join(ny_trt, acs_data, by="GEOID")
+ny_trt <- ny_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+nyc_boundary<-places(state="New York", class="sf") %>% filter(NAME == "New York")
+nyc_trt<-ny_trt %>% filter(st_contains(nyc_boundary,ny_trt, sparse = FALSE))
+ggplot() + 
+  geom_sf(data = nyc_trt, colour = "light gray", fill = NA) +
+  geom_sf(data = nyc_boundary, colour = "dark gray", fill = NA)+theme_minimal()
+
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in New York City, 2019")+theme_minimal()
+```
+
+```{r,include = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in New York City, 2019")+theme_minimal()
+```
+
+```{r,include = FALSE, message=FALSE}
+#Graphing Segregation
+
+nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) + ylim(0,1)+theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in New York City as per Tracts, 2019")
+
+```
+
+```{r,include = FALSE, message=FALSE}
+nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PNonwhite)) +ylim(0,1)+theme(axis.title.x=element_blank(),
+                                                                                    axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in New York City as per Tracts, 2019")
+```
+
+## Racial Segregation in San Francisco
+```{r,include = FALSE, message=FALSE}
+#San Francisco
+#Downloading census data
+rm(list = ls())
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ca_trt <- tracts(state="CA", class="sf")
+ca_trt <- left_join(ca_trt, acs_data, by="GEOID")
+ca_trt <- ca_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+sf_boundary<-places(state="California", class="sf") %>% filter(NAME == "San Francisco")
+sf_trt<-ca_trt %>% filter(st_contains(sf_boundary,ca_trt, sparse = FALSE))
+ggplot() + 
+  geom_sf(data = sf_trt, colour = "light gray", fill = NA) +
+  geom_sf(data = sf_boundary, colour = "dark gray", fill = NA)+theme_minimal()
+
+rm(il_trt, ca_trt, ny_trt)
+
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in San Francisco, 2019")+theme_minimal()
 
 
+
+```
+
+```{r,include = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in San Francisco, 2019")+theme_minimal()
+```
+
+```{r,include = FALSE, message=FALSE}
+#Graphing Segregation
+sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) +theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in San Francisco as per Tracts, 2019")
+```
+
+```{r,include = FALSE, message=FALSE}
+sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PNonwhite)) +theme(axis.title.x=element_blank(),
+                                                               axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in San Francisco as per Tracts, 2019")
+
+```
+
+
+##Measuring Racial Segregation
+## Dissimilarity
+
+```{r,include = FALSE, message=FALSE}
+#Majority Minority Dissimilarity in Chicago
+chi_trt <- chi_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+chi_dissimilarity_major_minor_NonWhite<- chi_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#New York City
+nyc_trt <- nyc_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+nyc_dissimilarity_major_minor_NonWhite<- nyc_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#San Francisco
+#Majority Minority Dissimilarity
+sf_trt <- sf_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+sf_dissimilarity_major_minor_NonWhite<- sf_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+```
+
+## Interaction
+
+```{r,include = FALSE, message=FALSE}
+#Interaction in Chicago
+chi_interact_NonWhite_white <- chi_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#New York City
+nyc_interact_NonWhite_white <- nyc_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#San Francisco
+sf_interact_NonWhite_white <- sf_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+```
+
+## Isolation
+
+```{r,include = FALSE, message=FALSE}
+#Isolation in Chicago
+chi_isolation_nw <- chi_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#New York City
+nyc_isolation_nw <- nyc_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#San Francisco
+sf_isolation_nw <- sf_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+```
+
+##Measuring Income Segregation
+
+##Income Segregation in Chicago
+
+```{r,include = FALSE, message=FALSE}
+#Income Segregation in Chicago
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "Illinois",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+Chicago_tot_MHHI <- place_median_income$MHHI_tot[1]
+chi_trt <- chi_trt %>% mutate(inc_ratio = MHHI/Chicago_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in Chicago, 2019")+theme_minimal()
+
+```
+
+##Income Segregation in New York City
+
+```{r,include = FALSE, message=FALSE}
+#Income Segregation in New York City
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "New York",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "New York city, New York") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+NewYorkCity_tot_MHHI <- place_median_income$MHHI_tot[1]
+nyc_trt <- nyc_trt %>% mutate(inc_ratio = MHHI/NewYorkCity_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in New York City, 2019")+theme_minimal()
+
+```
+
+##Income Segregation in San Francisco
+
+```{r,include = FALSE, message=FALSE}
+#Income Segregation in San Francisco
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "California",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+SanFrancisco_tot_MHHI <- place_median_income$MHHI_tot[1]
+sf_trt <- sf_trt %>% mutate(inc_ratio = MHHI/SanFrancisco_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in San Francisco, 2019")+theme_minimal()
+```
+
+##Intersectionality between Income and Racial Segregation
+##Spatial relationship between Income and Race in Chicago
+
+```{r,include = FALSE, message=FALSE}
+#Chicago
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = chi_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in Chicago, 2019", x = "Percent White", y = "Income Ratio")
+
+```
+
+##Spatial relationship between Income and Race in New York City
+
+```{r,include = FALSE, message=FALSE}
+#New York City
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = nyc_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in New York City, 2019", x = "Percent White", y = "Income Ratio")
+
+```
+
+##Spatial relationship between Income and Race in San Francisco
+
+```{r,include = FALSE, message=FALSE}
+#San Francisco
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = sf_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in San Francisco, 2019", x = "Percent White", y = "Income Ratio") 
+
+```
+
+##Summary
+
+```{r,include = FALSE, message=FALSE}
+
+
+
+```
