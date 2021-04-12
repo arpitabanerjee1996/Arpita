@@ -1,0 +1,2737 @@
+---
+title: "BackgroundStudy 2019"
+author: "Arpita Banerjee."
+date: "4/02/2021"
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  pdf_document:
+    toc: yes
+  include: FALSE
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+rm(list=ls())
+library(kableExtra)
+library(tidyverse)
+library(tidycensus)
+library(ggplot2)
+library(sf)
+library(tigris)
+census_api_key("9c5c7647c70b95cd0063a955fabbbf7c0970aa6d")
+```
+# Version
+1.0 - 04/02/2021
+1.1- 04/03/2021
+1.2- 10/03/2021
+
+# 1.Introduction
+
+This notebook will serve as the baseline study for three cities - Chicago, New York and San Francisco. These cities will be considered as prospective candidates for the evaluation of a Housing Spatial Decision Support System. This section currently explores the most basic demographic characteristics affecting housing velnerability during Covid-19 pandemic - race age, income, gender and poverty. 
+
+# 2.Demographic Characteristics
+## 2.1 List of Characteristics
+## 2.2 Race
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Study on Race
+#Chicago
+IL_race_2019 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+IL_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "Chicago city, Illinois") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+IL_race_2019 <- bind_cols(IL_race_2019, IL_latino_2019)
+IL_race_2019 <- IL_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(IL_latino_2019)
+
+#New York
+NY_race_2019 <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+NY_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "New York city, New York") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+NY_race_2019 <- bind_cols(NY_race_2019, NY_latino_2019)
+NY_race_2019 <- NY_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(NY_latino_2019)
+
+#San Francisco
+CA_race_2019 <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+CA_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "San Francisco city, California") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+CA_race_2019 <- bind_cols(CA_race_2019, CA_latino_2019)
+CA_race_2019 <- CA_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(CA_latino_2019)
+
+#Bringing them together
+Race_Comparison <- bind_rows(IL_race_2019, NY_race_2019, CA_race_2019)
+rm(IL_race_2019, CA_race_2019, NY_race_2019)
+```
+
+
+```{r,include = FALSE, message=FALSE}
+# Table
+race <- knitr::kable(Race_Comparison)
+column_spec(race,c(2,3,4,5,6,7,8,9,10,11), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Race_Comparison %>% ggplot(aes(y=pop_tot, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = pop_tot), vjust = -0.5)+labs(title = "Total Population across 3 Major Cities, 2019")
+```
+### 2.2.1 Minority Populations
+
+```{r,echo=FALSE, message=FALSE}
+Race_Comparison %>% ggplot(aes(y=(100-percentpop_white), x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = (100-percentpop_white)), vjust = -0.5)+labs(title = "Percentage Population of Non-Whites across 3 Major Cities, 2019")
+```
+
+```{r,echo=FALSE, message=FALSE}
+Race_Comparison %>% ggplot(aes(y=percentpop_black, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = percentpop_black), vjust = -0.5)+labs(title = "Percentage of Black Population across 3 Major Cities, 2019")
+```
+
+## 2.3. Age
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Study on Age
+#Chicago
+IL_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Chicago city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "Chicago city, Illinois") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+#New York
+NY_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "New York city, New York") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "New York city, New York") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+
+#San Francisco
+CA_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "San Francisco city, California") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "San Francisco city, California") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+
+#Together
+Age_Comparison <- bind_rows(IL_age_2019,NY_age_2019,CA_age_2019)
+rm(IL_age_2019,NY_age_2019,CA_age_2019)
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+age <- knitr::kable(Age_Comparison)
+column_spec(age,c(2,3), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Age_Comparison %>% ggplot(aes(y=Population_Per_Category, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Population in different age categories across 3 Major Cities, 2019") 
+```
+
+## 2.4.Female Occupied Households
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Female Headed Households
+#Chicago
+IL_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+IL_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+IL_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+IL_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+IL_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+IL_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+IL_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+IL_femaleHH_2019 <- bind_cols(IL_femaleHH_2019_total,IL_femaleHH_2019_white, IL_femaleHH_2019_black, IL_femaleHH_2019_latino, IL_femaleHH_2019_Asian, IL_femaleHH_2019_AIAN, IL_femaleHH_2019_other)
+
+IL_femaleHH_2019_Percentage <- IL_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+IL_femaleHH_2019 <- bind_cols(IL_femaleHH_2019, IL_femaleHH_2019_Percentage)
+IL_femaleHH_2019 <- IL_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(IL_femaleHH_2019_AIAN, IL_femaleHH_2019_total, IL_femaleHH_2019_white, IL_femaleHH_2019_black, 
+   IL_femaleHH_2019_latino, IL_femaleHH_2019_Asian, IL_femaleHH_2019_other, IL_femaleHH_2019_Percentage)
+
+#New York
+NY_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+NY_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+NY_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+NY_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+NY_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+NY_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+NY_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+NY_femaleHH_2019 <- bind_cols(NY_femaleHH_2019_total,NY_femaleHH_2019_white, NY_femaleHH_2019_black, NY_femaleHH_2019_latino, NY_femaleHH_2019_Asian, NY_femaleHH_2019_AIAN, NY_femaleHH_2019_other)
+
+NY_femaleHH_2019_Percentage <- NY_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+NY_femaleHH_2019 <- bind_cols(NY_femaleHH_2019, NY_femaleHH_2019_Percentage)
+NY_femaleHH_2019 <- NY_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(NY_femaleHH_2019_AIAN, NY_femaleHH_2019_total, NY_femaleHH_2019_white, NY_femaleHH_2019_black, 
+   NY_femaleHH_2019_latino, NY_femaleHH_2019_Asian, NY_femaleHH_2019_other, NY_femaleHH_2019_Percentage)
+
+#San Francisco
+CA_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+CA_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+CA_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+CA_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+CA_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+CA_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+CA_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+CA_femaleHH_2019 <- bind_cols(CA_femaleHH_2019_total,CA_femaleHH_2019_white, CA_femaleHH_2019_black, CA_femaleHH_2019_latino, CA_femaleHH_2019_Asian, CA_femaleHH_2019_AIAN, CA_femaleHH_2019_other)
+
+CA_femaleHH_2019_Percentage <- CA_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+CA_femaleHH_2019 <- bind_cols(CA_femaleHH_2019, CA_femaleHH_2019_Percentage)
+CA_femaleHH_2019 <- CA_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(CA_femaleHH_2019_AIAN, CA_femaleHH_2019_total, CA_femaleHH_2019_white, CA_femaleHH_2019_black, 
+   CA_femaleHH_2019_latino, CA_femaleHH_2019_Asian, CA_femaleHH_2019_other, CA_femaleHH_2019_Percentage)
+
+#Together
+FemaleHH_Comparison <- bind_rows(IL_femaleHH_2019,NY_femaleHH_2019,CA_femaleHH_2019)
+rm(IL_femaleHH_2019,NY_femaleHH_2019,CA_femaleHH_2019)
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+female_hh <- knitr::kable(FemaleHH_Comparison)
+column_spec(female_hh,c(2,3,4,5,6,7,8,9,10,11,12,13), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+FemaleHH_Comparison %>% mutate(PercentNon_White = 100-Percent_White) %>% ggplot(aes(y=PercentNon_White, x=NAME))+geom_col()+ylim(0,100)+geom_text(aes(label = femaleHH_tot), vjust = -0.5)+theme_minimal()+labs(title = "Female headed Households (% and Number) across 3 Major Cities, 2019")
+```
+
+## 2.5. Median Household Income
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Median Household Income
+#Chicago
+IL_income_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+IL_income_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_white = B19013A_001E)
+
+IL_income_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_black = B19013B_001E)
+
+IL_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+IL_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+IL_income_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_other = B19013F_001E)
+
+IL_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+IL_income_2019 <- bind_cols(IL_income_2019_total,IL_income_2019_white, IL_income_2019_black, IL_income_2019_latino, IL_income_2019_Asian, IL_income_2019_AIAN, IL_income_2019_other)
+IL_income_2019_Difference_from_Average <- IL_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+IL_income_2019 <- bind_cols(IL_income_2019, IL_income_2019_Difference_from_Average)
+IL_income_2019 <- IL_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(IL_income_2019_AIAN, IL_income_2019_total, IL_income_2019_white, IL_income_2019_black, 
+   IL_income_2019_latino, IL_income_2019_Asian, IL_income_2019_other, IL_income_2019_Difference_from_Average)
+
+#New York
+rm(NY_income_2019)
+NY_income_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+NY_income_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_white = B19013A_001E)
+
+NY_income_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_black = B19013B_001E)
+
+NY_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+NY_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+NY_income_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_other = B19013F_001E)
+
+NY_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+NY_income_2019 <- bind_cols(NY_income_2019_total,NY_income_2019_white, NY_income_2019_black, NY_income_2019_latino, NY_income_2019_Asian, NY_income_2019_AIAN, NY_income_2019_other)
+NY_income_2019_Difference_from_Average <- NY_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+NY_income_2019 <- bind_cols(NY_income_2019, NY_income_2019_Difference_from_Average)
+NY_income_2019 <- NY_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(NY_income_2019_AIAN, NY_income_2019_total, NY_income_2019_white, NY_income_2019_black, 
+   NY_income_2019_latino, NY_income_2019_Asian, NY_income_2019_other, NY_income_2019_Difference_from_Average)
+
+#San Francisco
+CA_income_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+CA_income_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_white = B19013A_001E)
+
+CA_income_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_black = B19013B_001E)
+
+CA_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+CA_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+CA_income_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_other = B19013F_001E)
+
+CA_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+CA_income_2019 <- bind_cols(CA_income_2019_total,CA_income_2019_white, CA_income_2019_black, CA_income_2019_latino, CA_income_2019_Asian, CA_income_2019_AIAN, CA_income_2019_other)
+CA_income_2019_Difference_from_Average <- CA_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+CA_income_2019 <- bind_cols(CA_income_2019, CA_income_2019_Difference_from_Average)
+CA_income_2019 <- CA_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(CA_income_2019_AIAN, CA_income_2019_total, CA_income_2019_white, CA_income_2019_black, 
+   CA_income_2019_latino, CA_income_2019_Asian, CA_income_2019_other, CA_income_2019_Difference_from_Average)
+
+#Together
+Income_Comparison <- bind_rows(IL_income_2019,NY_income_2019,CA_income_2019)
+rm(IL_income_2019,NY_income_2019,CA_income_2019)
+```
+
+```{r}
+#Table
+income<- knitr::kable(Income_Comparison)
+column_spec(income,c(2,3,4,5,6,7,8,9,10,11,12,13), border_left="0.5px solid gray", border_right="0.5px solid gray")
+
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=MHHI_tot, x=NAME))+geom_col()+geom_text(aes(label = MHHI_tot), vjust = -0.5)+theme_minimal()+labs(title = "Median Annual HH Income ($) across 3 Major Cities, 2019")
+
+```
+### 2.5.1. Median Household Income across Different Races
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_White, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_White,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and White Income, 2019")
+```
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Black, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Black,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Black Income, 2019")
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Latino, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Latino,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Latino Income, 2019")
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Asian, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Asian,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Asian Income, 2019")
+```
+
+## 2.6.Poverty
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Poverty
+#Chicago
+IL_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Chicago city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+IL_poverty_female <- IL_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+IL_poverty_male <- IL_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+IL_poverty_total <- IL_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "Chicago city, Illinois") 
+IL_poverty_2019 <- bind_cols(IL_poverty_total, IL_poverty_male, IL_poverty_female) %>% select(NAME, Age_Category = age_cat...1, Total_Population_BelowPoverty = poverty_total,
+                                                                                              Total_Males_BelowPoverty = poverty_male,
+                                                                                              Total_Females_BelowPoverty = poverty_female) %>% 
+  mutate(percent_pov = (Total_Population_BelowPoverty*100)/sum(Total_Population_BelowPoverty), 
+         percent_male = (Total_Males_BelowPoverty*100)/sum(Total_Males_BelowPoverty),
+         percent_female = (Total_Females_BelowPoverty*100)/sum(Total_Females_BelowPoverty)) %>% 
+  select(NAME, Age_Category, Total_Population_BelowPoverty, percent_pov,
+         Total_Males_BelowPoverty, percent_male, 
+         Total_Females_BelowPoverty, percent_female)
+
+rm(IL_poverty_2019_census, IL_poverty_total,IL_poverty_male, IL_poverty_female)
+
+#New York
+NY_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "New York city, New York") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+NY_poverty_female <- NY_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+NY_poverty_male <- NY_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+NY_poverty_total <- NY_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "New York city, New York") 
+NY_poverty_2019 <-
+  bind_cols(NY_poverty_total, NY_poverty_male, NY_poverty_female) %>% select(
+    NAME,
+    Age_Category = age_cat...1,
+    Total_Population_BelowPoverty = poverty_total,
+    Total_Males_BelowPoverty = poverty_male,
+    Total_Females_BelowPoverty = poverty_female
+  ) %>%
+  mutate(
+    percent_pov = (Total_Population_BelowPoverty * 100) / sum(Total_Population_BelowPoverty),
+    percent_male = (Total_Males_BelowPoverty * 100) / sum(Total_Males_BelowPoverty),
+    percent_female = (Total_Females_BelowPoverty * 100) / sum(Total_Females_BelowPoverty)
+  ) %>%
+  select(
+    NAME,
+    Age_Category,
+    Total_Population_BelowPoverty,
+    percent_pov,
+    Total_Males_BelowPoverty,
+    percent_male,
+    Total_Females_BelowPoverty,
+    percent_female
+  )
+rm(NY_poverty_2019_census, NY_poverty_total,NY_poverty_male, NY_poverty_female)
+
+#San Francisco
+CA_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "San Francisco city, California") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+CA_poverty_female <- CA_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+CA_poverty_male <- CA_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+CA_poverty_total <- CA_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "San Francisco, California") 
+CA_poverty_2019 <-
+  bind_cols(CA_poverty_total, CA_poverty_male, CA_poverty_female) %>% select(
+    NAME,
+    Age_Category = age_cat...1,
+    Total_Population_BelowPoverty = poverty_total,
+    Total_Males_BelowPoverty = poverty_male,
+    Total_Females_BelowPoverty = poverty_female
+  ) %>%
+  mutate(
+    percent_pov = (Total_Population_BelowPoverty * 100) / sum(Total_Population_BelowPoverty),
+    percent_male = (Total_Males_BelowPoverty * 100) / sum(Total_Males_BelowPoverty),
+    percent_female = (Total_Females_BelowPoverty * 100) / sum(Total_Females_BelowPoverty)
+  ) %>%
+  select(
+    NAME,
+    Age_Category,
+    Total_Population_BelowPoverty,
+    percent_pov,
+    Total_Males_BelowPoverty,
+    percent_male,
+    Total_Females_BelowPoverty,
+    percent_female
+  )
+rm(CA_poverty_2019_census, CA_poverty_total,CA_poverty_male, CA_poverty_female)
+
+
+#Together
+Poverty_Comparison <- bind_rows(IL_poverty_2019,NY_poverty_2019,CA_poverty_2019)
+rm(IL_poverty_2019,NY_poverty_2019,CA_poverty_2019)
+```
+
+```{r}
+#Table
+poverty <- knitr::kable(Poverty_Comparison)
+column_spec(poverty,c(2,3,4,5,6,7), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Population_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Poverty Across 3 Major Cities in the US, 2019")
+
+```
+### 2.6.1 Poverty, Age and Sex
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Males_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Male Poverty Across 3 Major Cities in the US, 2019")
+
+```
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Females_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Female Poverty Across 3 Major Cities in the US, 2019")
+
+```
+
+## 2.7.Housing Tenure (Focus Area: Renter Households)
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+## Housing Tenure
+# Chicago
+IL_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+IL_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+IL_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+IL_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+IL_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+IL_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+IL_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+IL_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+IL_tenure_2019 <- bind_cols(IL_tenure_2019_total,
+                            IL_tenure_2019_white, 
+                            IL_tenure_2019_black, 
+                            IL_tenure_2019_Latino, 
+                            IL_tenure_2019_Asian, 
+                            IL_tenure_2019_AIAN, 
+                            IL_tenure_2019_NHPI,
+                            IL_tenure_2019_other)
+rm(IL_tenure_2019_total,
+   IL_tenure_2019_white, 
+   IL_tenure_2019_black, 
+   IL_tenure_2019_Latino, 
+   IL_tenure_2019_Asian, 
+   IL_tenure_2019_AIAN, 
+   IL_tenure_2019_NHPI,
+   IL_tenure_2019_other)
+
+# New York
+NY_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+NY_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+NY_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+NY_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+NY_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+NY_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+NY_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+NY_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+NY_tenure_2019 <- bind_cols(NY_tenure_2019_total,
+                            NY_tenure_2019_white, 
+                            NY_tenure_2019_black, 
+                            NY_tenure_2019_Latino, 
+                            NY_tenure_2019_Asian, 
+                            NY_tenure_2019_AIAN, 
+                            NY_tenure_2019_NHPI,
+                            NY_tenure_2019_other)
+rm(NY_tenure_2019_total,
+   NY_tenure_2019_white, 
+   NY_tenure_2019_black, 
+   NY_tenure_2019_Latino, 
+   NY_tenure_2019_Asian, 
+   NY_tenure_2019_AIAN, 
+   NY_tenure_2019_NHPI,
+   NY_tenure_2019_other)
+
+# San Francisco
+CA_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+CA_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+CA_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+CA_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+CA_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+CA_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+CA_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+CA_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+CA_tenure_2019 <- bind_cols(CA_tenure_2019_total,
+                            CA_tenure_2019_white, 
+                            CA_tenure_2019_black, 
+                            CA_tenure_2019_Latino, 
+                            CA_tenure_2019_Asian, 
+                            CA_tenure_2019_AIAN, 
+                            CA_tenure_2019_NHPI,
+                            CA_tenure_2019_other)
+rm(CA_tenure_2019_total,
+   CA_tenure_2019_white, 
+   CA_tenure_2019_black, 
+   CA_tenure_2019_Latino, 
+   CA_tenure_2019_Asian, 
+   CA_tenure_2019_AIAN, 
+   CA_tenure_2019_NHPI,
+   CA_tenure_2019_other)
+
+# Together
+Tenure_Rented_Comparison <- bind_rows(IL_tenure_2019,NY_tenure_2019,CA_tenure_2019)
+rm(IL_tenure_2019,NY_tenure_2019,CA_tenure_2019)
+```
+
+```{r}
+# Table
+tenure <- knitr::kable(Tenure_Rented_Comparison)
+column_spec(tenure,c(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Tenure_Rented_Comparison %>% ggplot(aes(y=rent_tot, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(percent_rent,0)), vjust = -0.5)+theme_minimal()+labs(title = "HHs living in Rental Housing (with %), 2019")
+
+```
+
+### 2.7.1. Housing Tenure and Race
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Tenure_Rented_Comparison %>% mutate(rent_tot_nonwhite = rent_tot - rent_tot_white, percent_rent_nonwhite = (rent_tot_nonwhite*100)/rent_tot) %>% ggplot(aes(y=rent_tot_nonwhite, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(percent_rent_nonwhite,0)), vjust = -0.5)+theme_minimal()+labs(title = "Non-White HHs living in Rental Housing (with %), 2019")
+
+```
+
+### 2.7.2 Housing Cost Burden with respect to Income (All Occupied Households)
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+## Housing Cost Burden
+# Chicago
+IL_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "Chicago city, Illinois") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "Chicago city, Illinois",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+# New York
+NY_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "New York city, New York") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "New York city, New York",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+# San Francisco
+CA_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "San Francisco city, California") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "San Francisco city, California",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+
+# Together
+OverallHousingCostBurden_Comparison <- bind_rows(IL_HousingCostBurden_2019,NY_HousingCostBurden_2019,CA_HousingCostBurden_2019)
+rm(IL_HousingCostBurden_2019,NY_HousingCostBurden_2019,CA_HousingCostBurden_2019)
+```
+
+```{r, echo=FALSE, message = FALSE }
+# Table
+housing_burden <- knitr::kable(OverallHousingCostBurden_Comparison)
+column_spec(housing_burden,c(2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19), border_left="0.5px solid gray", border_right="0.5px solid gray")
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_Lessthan_20000, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_Lessthan_20000,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households earning less than USD 20,000 Per Year (with %), 2019")
+```
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_20000_to_34999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_20000_to_34999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households earning between USD 20,000 and 34999 Per Year (with %), 2019")
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_35000_to_49999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_35000_to_49999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households earning between USD 35,000 and 49,999 Per Year (with %), 2019")
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_50000_to_74999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_50000_to_74999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households earning between USD 50,000 and 74,999 Per Year (with %), 2019")
+```
+
+# 3. Housing Segregation 
+## 3.1 Racial Segregation in Chicago
+```{r,include= FALSE, message=FALSE}
+#Chicago
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+il_trt <- tracts(state="IL", class="sf")
+il_trt <- left_join(il_trt, acs_data, by="GEOID")
+il_trt <- il_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+chi_boundary<-places(state="Illinois", class="sf") %>% filter(NAME == "Chicago")
+chi_trt<-il_trt %>% filter(st_contains(chi_boundary,il_trt, sparse = FALSE))
+
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in Chicago, 2019")+theme_minimal()
+```
+
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in Chicago, 2019")+theme_minimal()
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+
+ggplot(data= chi_trt)+geom_col(aes(x=NAME, y=PWhite))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "White Population in Chicago as per Tracts, 2019")
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+ggplot(data= chi_trt)+geom_col(aes(x=NAME, y=PNonwhite))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in Chicago as per Tracts, 2019")
+```
+
+## 3.2 Racial Segregation in New York City
+```{r,include=FALSE, message=FALSE}
+#New York City
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ny_trt <- tracts(state="NY", class="sf")
+ny_trt <- left_join(ny_trt, acs_data, by="GEOID")
+ny_trt <- ny_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+nyc_boundary<-places(state="New York", class="sf") %>% filter(NAME == "New York")
+nyc_trt<-ny_trt %>% filter(st_contains(nyc_boundary,ny_trt, sparse = FALSE))
+
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in New York City, 2019")+theme_minimal()
+```
+
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in New York City, 2019")+theme_minimal()
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+
+nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) + ylim(0,1)+theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in New York City as per Tracts, 2019")
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PNonwhite)) +ylim(0,1)+theme(axis.title.x=element_blank(),
+                                                                                    axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in New York City as per Tracts, 2019")
+```
+
+## 3.3 Racial Segregation in San Francisco
+```{r,include = FALSE, message=FALSE}
+#San Francisco
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ca_trt <- tracts(state="CA", class="sf")
+ca_trt <- left_join(ca_trt, acs_data, by="GEOID")
+ca_trt <- ca_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+sf_boundary<-places(state="California", class="sf") %>% filter(NAME == "San Francisco")
+sf_trt<-ca_trt %>% filter(st_contains(sf_boundary,ca_trt, sparse = FALSE))
+
+rm(il_trt, ca_trt, ny_trt)
+```
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in San Francisco, 2019")+theme_minimal()
+
+```
+
+
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in San Francisco, 2019")+theme_minimal()
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) +theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in San Francisco as per Tracts, 2019")
+```
+
+```{r,echo = FALSE, message=FALSE}
+sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PNonwhite)) +theme(axis.title.x=element_blank(),
+                                                               axis.text.x=element_blank())+ 
+  labs(title = "Non-White Population in San Francisco as per Tracts, 2019")
+
+```
+
+## 3.4 Measuring Racial Segregation
+### 3.4.1 Dissimilarity
+
+```{r,echo = FALSE, message=FALSE}
+#Majority Minority Dissimilarity in Chicago
+chi_trt <- chi_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+chi_dissimilarity_major_minor_NonWhite<- chi_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#New York City
+nyc_trt <- nyc_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+nyc_dissimilarity_major_minor_NonWhite<- nyc_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#San Francisco
+#Majority Minority Dissimilarity
+sf_trt <- sf_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+sf_dissimilarity_major_minor_NonWhite<- sf_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#Together
+Dissimilarity_Comparison <- bind_rows(chi_dissimilarity_major_minor_NonWhite, 
+                             nyc_dissimilarity_major_minor_NonWhite,
+                             sf_dissimilarity_major_minor_NonWhite)
+rm(chi_dissimilarity_major_minor_NonWhite, 
+                             nyc_dissimilarity_major_minor_NonWhite,
+                             sf_dissimilarity_major_minor_NonWhite)
+knitr::kable(Dissimilarity_Comparison)
+```
+
+### 3.4.2 Interaction
+
+```{r,include = FALSE, message=FALSE}
+#Interaction in Chicago
+chi_interact_NonWhite_white <- chi_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#New York City
+nyc_interact_NonWhite_white <- nyc_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#San Francisco
+sf_interact_NonWhite_white <- sf_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#Together
+Interaction_Comparison <- bind_rows(chi_interact_NonWhite_white,
+                                    nyc_interact_NonWhite_white,
+                                    sf_interact_NonWhite_white)
+rm(chi_interact_NonWhite_white,
+                                    nyc_interact_NonWhite_white,
+                                    sf_interact_NonWhite_white)
+knitr::kable(Interaction_Comparison)
+```
+
+### 3.4.3. Isolation
+
+```{r,echo = FALSE, message=FALSE}
+#Isolation in Chicago
+chi_isolation_nw <- chi_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#New York City
+nyc_isolation_nw <- nyc_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#San Francisco
+sf_isolation_nw <- sf_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#Together
+Isolation_Comparison <- bind_rows(chi_isolation_nw,
+                                  nyc_isolation_nw,
+                                  sf_isolation_nw)
+rm(chi_isolation_nw,nyc_isolation_nw,sf_isolation_nw)
+knitr::kable(Isolation_Comparison)
+```
+
+## 3.5 Measuring Income Segregation
+
+### 3.5.1 Income Segregation in Chicago
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in Chicago
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "Illinois",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+Chicago_tot_MHHI <- place_median_income$MHHI_tot[1]
+chi_trt <- chi_trt %>% mutate(inc_ratio = MHHI/Chicago_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in Chicago, 2019")+theme_minimal()
+
+```
+
+### 3.5.2 Income Segregation in New York City
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in New York City
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "New York",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "New York city, New York") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+NewYorkCity_tot_MHHI <- place_median_income$MHHI_tot[1]
+nyc_trt <- nyc_trt %>% mutate(inc_ratio = MHHI/NewYorkCity_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in New York City, 2019")+theme_minimal()
+
+```
+
+### 3.5.3 Income Segregation in San Francisco
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in San Francisco
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "California",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+SanFrancisco_tot_MHHI <- place_median_income$MHHI_tot[1]
+sf_trt <- sf_trt %>% mutate(inc_ratio = MHHI/SanFrancisco_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in San Francisco, 2019")+theme_minimal()
+```
+
+## 3.6 Intersectionality between Income and Racial Segregation
+### 3.6.1. Spatial relationship between Income and Race in Chicago
+
+```{r,echo = FALSE, message=FALSE}
+#Chicago
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = chi_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in Chicago, 2019", x = "Percent White", y = "Income Ratio")
+
+```
+
+### 3.6.2. Spatial relationship between Income and Race in New York City
+
+```{r,echo = FALSE, message=FALSE}
+#New York City
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = nyc_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in New York City, 2019", x = "Percent White", y = "Income Ratio")
+
+```
+
+### 3.6.3. Spatial relationship between Income and Race in San Francisco
+
+```{r,echo = FALSE, message=FALSE}
+#San Francisco
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = sf_trt, aes(x = PWhite, y = inc_ratio)) + geom_abline(method = "lm") +
+  labs(title = "Population of Whites v/s Median Household Income Ratios in San Francisco, 2019", x = "Percent White", y = "Income Ratio") 
+
+```
+
+# 4. Summary
+
+```{r,echo = FALSE, message=FALSE}
+
+
+
+```
