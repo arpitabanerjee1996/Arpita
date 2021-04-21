@@ -1,0 +1,1391 @@
+---
+title: "Socio-Economic Analysis of Champaign, Illinois, 2017"
+author: "Arpita Banerjee."
+date: "4/21/2021"
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  pdf_document:
+    toc: yes
+  include: FALSE
+editor_options: 
+  chunk_output_type: inline
+---
+```{r setup, include = FALSE, message=FALSE}
+library(tidyverse)
+library(tidycensus)
+library(ggplot2)
+library(kableExtra)
+census_api_key("936c96236b979ae522c6cf67edb51923cd391fb3")
+```
+# Introduction
+
+This notebook tries to look at the distribution of socio-economic data spanning race, age, income, poverty and housing characteristics across 3 spatial levels - the city, county and region through teh example of Champaign, IL. It then tries to understand scales for policy intervention after the recognition of different issues. 
+
+
+# 1. Race
+This section explores the distribution of racial and ethnic groups - whites, blacks, latinos, Asians, etc. across three scales. 
+```{r, echo=FALSE, message=FALSE}
+#Code
+place_race_2017<-get_acs(geography = "place", state = "IL", table = "B02001", year=2017, survey="acs5", output="wide") %>% 
+  filter(NAME == "Champaign city, Illinois") %>% 
+  mutate(pop_other = B02001_001E-(B02001_002E + B02001_003E+ B02001_005E)) %>% 
+  rename(pop_tot = B02001_001E, pop_white = B02001_002E, pop_black = B02001_003E, pop_asian = B02001_005E) %>% 
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other)%>% 
+  mutate(p_white = (pop_white/pop_tot)*100,
+         p_black = (pop_black/pop_tot)*100,
+         p_asian = (pop_asian / pop_tot)*100,
+         p_other = (pop_other/pop_tot)*100)
+
+
+county_race_2017<-get_acs(geography = "county", state = "IL", table = "B02001", year=2017, survey="acs5", output="wide") %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  mutate(pop_other = B02001_001E-(B02001_002E + B02001_003E+ B02001_005E)) %>% 
+  rename(pop_tot = B02001_001E, pop_white = B02001_002E, pop_black = B02001_003E, pop_asian = B02001_005E) %>% 
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other)%>% 
+  mutate(p_white = (pop_white/pop_tot)*100,
+         p_black = (pop_black/pop_tot)*100,
+         p_asian = (pop_asian / pop_tot)*100,
+         p_other = (pop_other/pop_tot)*100)
+
+region_race_2017<- get_acs(geography = "county", state = "IL", table = "B02001", year=2017, survey="acs5", output="wide") %>% 
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(B02001_001E = sum(B02001_001E),
+            B02001_002E = sum(B02001_002E),
+            B02001_003E = sum(B02001_003E),
+            B02001_005E = sum(B02001_005E)) %>% 
+  mutate(NAME = "Region")%>% 
+  mutate(pop_other = B02001_001E-(B02001_002E + B02001_003E+ B02001_005E)) %>% 
+  rename(pop_tot = B02001_001E, pop_white = B02001_002E, pop_black = B02001_003E, pop_asian = B02001_005E) %>% 
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>% 
+  mutate(
+    p_white = (pop_white / pop_tot)*100,
+    p_black = (pop_black / pop_tot)*100,
+    p_asian = (pop_asian / pop_tot)*100,
+    p_other = (pop_other / pop_tot)*100)
+
+race_2017<-bind_rows(place_race_2017, county_race_2017,region_race_2017)
+
+place_ethnicity_2017<- get_acs(geography = "place", state = "IL", table = "B03002", year=2017, survey="acs5", output="wide") %>% 
+  filter(NAME == "Champaign city, Illinois") %>% 
+  mutate(pop_latino = B03002_012E,
+         p_latino=(B03002_012E / B03002_001E)*100) %>% 
+  select(pop_latino, p_latino)
+
+county_ethnicity_2017<-get_acs(geography = "county", state = "IL", table = "B03002", year=2017, survey="acs5", output="wide") %>% 
+  filter(NAME == "Champaign County, Illinois") %>% 
+  mutate(pop_latino = B03002_012E,
+         p_latino=(B03002_012E / B03002_001E)*100)  %>% 
+  select(pop_latino, p_latino)
+
+region_ethnicity_2017<- get_acs(geography = "county", state = "IL", table = "B03002", year=2017, survey="acs5", output="wide") %>% 
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(B03002_001E = sum(B03002_001E),
+            B03002_012E = sum(B03002_012E)) %>% 
+  mutate(NAME = "Region")%>% 
+  mutate(pop_latino = B03002_012E,
+         p_latino=(B03002_012E / B03002_001E)*100)  %>% 
+  select(pop_latino, p_latino)
+
+ethnicity_2017<-bind_rows(place_ethnicity_2017, county_ethnicity_2017, region_ethnicity_2017)
+race_2017 <- bind_cols(race_2017, ethnicity_2017)
+race_2017 <- race_2017 %>% select(NAME, pop_tot, 
+                                  pop_white, p_white,
+                                  pop_black, p_black,
+                                  pop_latino, p_latino,
+                                  pop_asian, p_asian,
+                                  pop_other, p_other
+)
+rm(county_ethnicity_2017, county_race_2017,
+   place_race_2017, place_ethnicity_2017,
+   region_race_2017, region_ethnicity_2017, ethnicity_2017)
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+race_2017 %>%
+  kbl(caption = "Racial Distribution in Champaign - City, County and Region, 2017") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+race_2017 %>% ggplot(aes(x=NAME, y= p_white))+geom_col()+theme_minimal()+ geom_text(aes(label = p_white), vjust = -0.5)+labs(title = "% White Population across Champaign City, County and Region, 2019")
+
+```
+
+This shows that the city of Champaign has a greater proportion of minority populations in comparison with the rest of the county and the region. The proportion of minorities is greater in Champaign County compared with populations of adjoining counties in the region. 
+
+```{r, echo=FALSE, message=FALSE}
+race_2017 %>% ggplot(aes(x=NAME, y= p_black))+geom_col()+theme_minimal()+ geom_text(aes(label = p_black), vjust = -0.5)+labs(title = "% Black Population across Champaign City, County and Region, 2017")
+
+```
+As we progress from the city to the region level, there is a gradual decrease in black population. However, the decrease in distribution is gradual, unlike the proportional increase of white population (10% difference between city and county, vis-a-vis 6% difference in case of black population). Similar to the black population, there are gradual changes in the Asian population as well ~ 2-3% reduction across the city, county and regional levels. 
+
+```{r, echo=FALSE, message=FALSE}
+race_2017 %>% ggplot(aes(x=NAME, y= p_latino))+geom_col()+theme_minimal()+ geom_text(aes(label = p_latino), vjust = -0.5)+labs(title = "% Latino Population across Champaign City, County and Region, 2017")
+
+```
+The proportion of Latinos remains fairly consistent across the city, county and region. There is hardly any difference at the county and regional levels, and a slightly greater (1%) proportion at the city level. Like the Latino population, other smaller minorities also maintain a consistent proportion of population across all levels. 
+
+# 2. Age
+```{r, include=FALSE, message=FALSE}
+place_age_2017 <-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B01001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Champaign city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "Champaign City, Illinois") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(Age_Category= variable_cat, Champaign_City_Population = age, 
+         Champaign_City_Percentage = percent_pop)
+
+county_age_2017 <-
+  get_acs(
+    geography = "county",
+    state = "IL",
+    table = "B01001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Champaign County, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "Champaign City, Illinois") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(Champaign_County_Population = age, 
+         Champaign_County_Percentage = percent_pop)
+
+region_age_2017 <-
+  get_acs(
+    geography = "county",
+    state = "IL",
+    table = "B01001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "Region") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(Region_Population = age, 
+         Region_Percentage = percent_pop)
+
+age_2017 <- bind_cols(place_age_2017,county_age_2017,region_age_2017)
+rm(place_age_2017,county_age_2017,region_age_2017)
+
+```
+The distribution of age across the 3 scales is measured using 3 categories - 19 and below, 20-44, 44-64 and greater than 64. They are broadly denoted as young depending upon whether they are below or above 44 years of age. 
+```{r, echo=FALSE, message=FALSE}
+#Table
+age_2017 %>%
+  kbl(caption = "Age Distribution in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+The population of 19 and below year olds increase across the three scales. Champaign City, County and Region has a higher percentage of young people owing to the location of the University of Illinois in this area. However, the proportion of youths is highest at the County Level - because this scale acts as the best container of the student population of the region. Champaign City has a disproportionately high percentage of persons between 20-44 years of age - comprising most of the graduate students (including international students), faculty and staff members of the University. The proportion of persons between 20-44 years reduce as we move across the scales, depicting the clear influence of the University across the scales. As we move across the older population increases showing that the younger population is mainly concentrated in the Champaign City - where the opportunities of education and employment are most concentrated.  
+```{r, echo=FALSE, message=FALSE}
+age_2017 %>% ggplot(aes(x=Age_Category, y= Champaign_City_Population))+geom_col()+theme_minimal()+ geom_text(aes(label = Champaign_City_Percentage), vjust = -0.5)+labs(title = " Population across different Age Groups in Champaign City, 2017")
+
+```
+
+This shows that the city of Champaign has the greatest proportion of young persons and persons of working age (ranging from 0-44 years). The proportion of older persons is significantly less in the city, in comparison with the county and region. 
+
+```{r, echo=FALSE, message=FALSE}
+age_2017 %>% ggplot(aes(x=Age_Category, y= Champaign_County_Population))+geom_col()+theme_minimal()+ geom_text(aes(label = Champaign_County_Percentage), vjust = -0.5)+labs(title = " Population across different Age Groups in Champaign County, 2017")
+
+```
+Since the proportion of youths and persons below 44 years of age continues to be high in the county, it acts as good container for the majority of the work force of the region. The proportion of older persons is greater here than at the city level. 
+
+```{r, echo=FALSE, message=FALSE}
+age_2017 %>% ggplot(aes(x=Age_Category, y= Region_Population))+geom_col()+theme_minimal()+ geom_text(aes(label = Region_Percentage), vjust = -0.5)+labs(title = " Population across different Age Groups in the Region, 2017")
+
+```
+The proportion of older persons is highest at this scale, meaning that older persons mostly reside away from the city. Younger populations continue to be high, but their proportion is moderated by the increase in the number of persons above the age of 44.
+
+# 3. Median Household Income
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+
+place_income_2017_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+place_income_2017_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(MHHI_white = B19013A_001E)
+
+place_income_2017_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(MHHI_black = B19013B_001E)
+
+place_income_2017_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+place_income_2017_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(MHHI_other = B19013F_001E)
+
+place_income_2017_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+place_income_2017 <- bind_cols(place_income_2017_total,place_income_2017_white, place_income_2017_black, place_income_2017_latino, place_income_2017_Asian, place_income_2017_other)
+rm(place_income_2017_total, place_income_2017_white, place_income_2017_black, 
+   place_income_2017_latino, place_income_2017_Asian, place_income_2017_other)
+
+# Champaign County
+
+county_income_2017_total <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+county_income_2017_white <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(MHHI_white = B19013A_001E)
+
+county_income_2017_black <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(MHHI_black = B19013B_001E)
+
+county_income_2017_Asian <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+county_income_2017_other <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(MHHI_other = B19013F_001E)
+
+county_income_2017_latino <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+county_income_2017 <- bind_cols(county_income_2017_total,county_income_2017_white, county_income_2017_black, county_income_2017_latino, county_income_2017_Asian, county_income_2017_other)
+rm(county_income_2017_total, county_income_2017_white, county_income_2017_black, 
+   county_income_2017_latino, county_income_2017_Asian, county_income_2017_other)
+
+# Champaign Region
+region_income_2017_total <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(MHHI_tot = median(B19013_001E)) %>% 
+  mutate(NAME = "Region")%>% 
+  select(NAME, MHHI_tot )
+
+region_income_2017_white <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(MHHI_white = median(B19013A_001E))%>% 
+  mutate(NAME = "Region")%>% 
+  select(MHHI_white)
+
+region_income_2017_black <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois"))%>% 
+  summarise(MHHI_black = median(B19013B_001E, na.rm = TRUE))%>% 
+  mutate(NAME = "Region")%>% 
+  select(MHHI_black)
+
+region_income_2017_Asian <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(MHHI_Asian = median(B19013D_001E, na.rm=TRUE))%>% 
+  mutate(NAME = "Region")%>% 
+  select(MHHI_Asian)
+
+region_income_2017_other <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(MHHI_other = median(B19013F_001E, na.rm = TRUE))%>% 
+  mutate(NAME = "Region")%>% 
+  select(MHHI_other)
+
+region_income_2017_latino <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B19013I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarise(MHHI_latino = median(B19013I_001E, na.rm = TRUE))%>% 
+  mutate(NAME = "Region")%>% 
+  select(MHHI_latino)
+
+region_income_2017 <- bind_cols(region_income_2017_total,region_income_2017_white, region_income_2017_black, region_income_2017_latino, region_income_2017_Asian, region_income_2017_other)
+rm(region_income_2017_total,region_income_2017_white, region_income_2017_black, region_income_2017_latino, region_income_2017_Asian, region_income_2017_other)
+
+MedianHH_income_2017 <- bind_rows(place_income_2017, county_income_2017, region_income_2017)
+rm(place_income_2017, county_income_2017, region_income_2017)
+```
+This section shows the distribution of income across different races and across three scales - the city, county and region. It shows the median income for all races, and then compares it with the distribution of income across whites, blacks, latinos, asians and other minority groups. 
+```{r, echo=FALSE, message=FALSE}
+#Table
+MedianHH_income_2017 %>%
+  kbl(caption = "Income Distribution in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+The highest income is recorded among whites across all the scales. It is interesting here to note that the median incomes increases as we move from top to bottom - the City houses the greatest proportion of youths, but incomes are lesser than the regional level. Latinos exhibit the second highest earnings, followed by other minority groups, blacks and Asians. Some of the median incomes (black, Asian and other) remain consistent across the county and region levels. The region records the highest incomes across all the scales.
+
+# 4 Female Headed Households
+```{r, include=FALSE, message=FALSE}
+
+#Champaign City
+
+placefemaleHH_2017_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+placefemaleHH_2017_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+placefemaleHH_2017_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+placefemaleHH_2017_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001C",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+placefemaleHH_2017_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+placefemaleHH_2017_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+placefemaleHH_2017_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+placefemaleHH_2017 <- bind_cols(placefemaleHH_2017_total,placefemaleHH_2017_white, placefemaleHH_2017_black, placefemaleHH_2017_latino, placefemaleHH_2017_Asian, placefemaleHH_2017_AIAN, placefemaleHH_2017_other)
+
+placefemaleHH_2017_Percentage <- placefemaleHH_2017 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+placefemaleHH_2017 <- bind_cols(placefemaleHH_2017, placefemaleHH_2017_Percentage)
+placefemaleHH_2017 <- placefemaleHH_2017 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(placefemaleHH_2017_AIAN, placefemaleHH_2017_total, placefemaleHH_2017_white, placefemaleHH_2017_black, 
+   placefemaleHH_2017_latino, placefemaleHH_2017_Asian, placefemaleHH_2017_other, placefemaleHH_2017_Percentage)
+
+#Champaign County
+countyfemaleHH_2017_total <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+countyfemaleHH_2017_white <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+countyfemaleHH_2017_black <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+countyfemaleHH_2017_AIAN <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001C",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+countyfemaleHH_2017_Asian <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+countyfemaleHH_2017_other <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+countyfemaleHH_2017_latino <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+countyfemaleHH_2017 <- bind_cols(countyfemaleHH_2017_total,countyfemaleHH_2017_white, countyfemaleHH_2017_black, countyfemaleHH_2017_latino, countyfemaleHH_2017_Asian, countyfemaleHH_2017_AIAN, countyfemaleHH_2017_other)
+
+countyfemaleHH_2017_Percentage <- countyfemaleHH_2017 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+countyfemaleHH_2017 <- bind_cols(countyfemaleHH_2017, countyfemaleHH_2017_Percentage)
+countyfemaleHH_2017 <- countyfemaleHH_2017 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                    femaleHH_white, Percent_White, 
+                                                    femaleHH_black, Percent_Black, 
+                                                    femaleHH_latino, Percent_Latino, 
+                                                    femaleHH_Asian, Percent_Asian, 
+                                                    femaleHH_AIAN, Percent_AIAN, 
+                                                    femaleHH_other, Percent_other)
+rm(countyfemaleHH_2017_AIAN, countyfemaleHH_2017_total, countyfemaleHH_2017_white, countyfemaleHH_2017_black, 
+   countyfemaleHH_2017_latino, countyfemaleHH_2017_Asian, countyfemaleHH_2017_other, countyfemaleHH_2017_Percentage)
+
+#Region
+regionfemaleHH_2017_total <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_tot = sum(B11001_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(NAME, femaleHH_tot)
+
+regionfemaleHH_2017_white <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001A",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_white = sum(B11001A_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_white)
+
+regionfemaleHH_2017_black <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001B",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_black = sum(B11001B_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_black)
+
+regionfemaleHH_2017_AIAN <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001C",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_AIAN = sum(B11001C_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_AIAN)
+
+regionfemaleHH_2017_Asian <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001D",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_Asian = sum(B11001D_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_Asian)
+
+regionfemaleHH_2017_other <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001F",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_other = sum(B11001F_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_other)
+
+regionfemaleHH_2017_latino <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B11001I",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  summarize(femaleHH_latino = sum(B11001I_006E, na.rm=TRUE)) %>% mutate(NAME = "Region") %>% 
+  select(femaleHH_latino)
+
+regionfemaleHH_2017 <- bind_cols(regionfemaleHH_2017_total,regionfemaleHH_2017_white, regionfemaleHH_2017_black, regionfemaleHH_2017_latino, regionfemaleHH_2017_Asian, regionfemaleHH_2017_AIAN, regionfemaleHH_2017_other)
+
+regionfemaleHH_2017_Percentage <- regionfemaleHH_2017 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+regionfemaleHH_2017 <- bind_cols(regionfemaleHH_2017, regionfemaleHH_2017_Percentage)
+regionfemaleHH_2017 <- regionfemaleHH_2017 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                      femaleHH_white, Percent_White, 
+                                                      femaleHH_black, Percent_Black, 
+                                                      femaleHH_latino, Percent_Latino, 
+                                                      femaleHH_Asian, Percent_Asian, 
+                                                      femaleHH_AIAN, Percent_AIAN, 
+                                                      femaleHH_other, Percent_other)
+rm(regionfemaleHH_2017_AIAN, regionfemaleHH_2017_total, regionfemaleHH_2017_white, regionfemaleHH_2017_black, 
+   regionfemaleHH_2017_latino, regionfemaleHH_2017_Asian, regionfemaleHH_2017_other, regionfemaleHH_2017_Percentage)
+
+#Together
+femaleHH_2017 <- bind_rows(placefemaleHH_2017,
+                           countyfemaleHH_2017,
+                           regionfemaleHH_2017)
+rm(placefemaleHH_2017,
+                           countyfemaleHH_2017,
+                           regionfemaleHH_2017)
+
+```
+This section explores the distribution of female headed households across the city, county and region scales. It also takes into account that female headed households can suffer important ramifications owing to race and therefore takes into account both the number and proportion of female headed houses as per their racial groups. 
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+femaleHH_2017 %>%
+  kbl(caption = " Distribution of Female Headed Households in Champaign - City, County and Region, 2017") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+ The greatest number of female headed households reside outside the Champaign City, specifically at the County Level. The proportion of white female headed households increases as we move from the city to the regional scale. This inference is commensurate with the overall distribution of racial groups across the scales - since the % of whites increase as we move from the city to the regional level, it seems plausible that the proportion of white female headed households also increase proportionally. The second highest proportion of female headed households belong to black women. Research suggests that this represents a category that is hit hard by the Covid-9 pandemic. The majority of black female headed households reside in Champaign City pointing towards the possibility of a large scale urban crisis. 
+ 
+```{r, echo=FALSE, message=FALSE}
+femaleHH_2017 %>% ggplot(aes(x=NAME, y= femaleHH_white))+geom_col()+geom_text(aes(label = Percent_White), vjust = -0.5)+theme_minimal()+labs(title = " White Population across 3 scales, 2017")
+
+```
+Both the number and percentage of white population and white female headed households are greater beyond the Champaign city. The distribution of female households confirm that although the population of minority groups is not evenly distributed across the three scales. This also means that Champaign City that houses a majority of the minority female headed households is the most vulnerable of all scales and concerted efforts should be directed at the urban scale. 
+
+# 5. Poverty 
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+place_poverty_2017<-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B17001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Champaign city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+   mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  ))%>% group_by(age_cat) %>% 
+  summarise(ChampaignCity_poverty_total=sum(estimate)) %>% 
+  mutate(ChampaignCitypercent_pov = (ChampaignCity_poverty_total * 100) / sum(ChampaignCity_poverty_total),
+  )
+#Champaign County
+county_poverty_2017<-
+  get_acs(
+    geography = "county",
+    state = "IL",
+    table = "B17001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Champaign County, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+   mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  ))%>% group_by(age_cat) %>% 
+  summarise(ChampaignCounty_poverty_total=sum(estimate)) %>% 
+  mutate(ChampaignCountypercent_pov = (ChampaignCounty_poverty_total * 100) / sum(ChampaignCounty_poverty_total),
+  ) %>% select(ChampaignCounty_poverty_total, ChampaignCountypercent_pov)
+
+#Region
+region_poverty_2017<-
+  get_acs(
+    geography = "county",
+    state = "IL",
+    table = "B17001",
+    year = 2017,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>%  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+   mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  ))%>% group_by(age_cat) %>% 
+  summarise(Region_poverty_total=sum(estimate)) %>% 
+  mutate(Region_percent_pov = (Region_poverty_total * 100) / sum(Region_poverty_total),
+  ) %>%  select(Region_poverty_total, Region_percent_pov)
+
+Poverty_2017 <- bind_cols(place_poverty_2017, county_poverty_2017, region_poverty_2017)
+rm(place_poverty_2017, county_poverty_2017, region_poverty_2017)
+```
+This section explores the intersection between age and poverty. It tries to build a relationship between the working-age of the population and the proportion of poor persons belonging to different age groups across the three scales. 
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_2017 %>%
+  kbl(caption = "Proportion of Different Age Groups for Poverty in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+The highest proportion of poverty is found amongst persons of working age. The concentration of poverty in this age bracket (between 20-44) can also be due to the presence of a high number of University students in the area. This effect gets moderated across the rest of the scales. 
+
+Populations above the age of 65 are the least poor across all the different scales. Measures of poverty should be more directed at the city level, since the maximum number of poor persons reside at the urban level. 
+
+# 6. Housing Tenure (Owners and Renters) 
+
+In this section we have a look at the percentage of owned versus rented households across the three scales. It is the first step in understanding the relationship between income, poverty and housing conditions. It will be visible here that the majority of the population of Champaign City spend their lives in rental housing signifying that ownership of housing is difficult for majority of the people. 
+
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+placetenure_2017 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(NAME,
+         tenure_tot = B25003_001E, 
+         owned = B25003_002E,
+         rented = B25003_003E) %>% 
+  mutate(percent_owned = (owned*100)/tenure_tot,
+         percent_rented = (rented*100)/tenure_tot)
+#Champaign County
+countytenure_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25003",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(NAME,
+         tenure_tot = B25003_001E, 
+         owned = B25003_002E,
+         rented = B25003_003E) %>% 
+  mutate(percent_owned = (owned*100)/tenure_tot,
+         percent_rented = (rented*100)/tenure_tot)
+#Region
+regiontenure_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25003",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% 
+         summarize(tenure_tot = sum(B25003_001E), 
+         owned = sum(B25003_002E),
+         rented = sum(B25003_003E)) %>% 
+  mutate(NAME = "Region",
+         percent_owned = (owned*100)/tenure_tot,
+         percent_rented = (rented*100)/tenure_tot) %>% 
+  select(NAME, tenure_tot, owned, rented, percent_owned, percent_rented)
+
+tenure_2017 <- bind_rows(placetenure_2017, countytenure_2017, regiontenure_2017)
+rm(placetenure_2017, countytenure_2017, regiontenure_2017)
+
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+tenure_2017 %>%
+  kbl(caption = "Distribution of Tenure in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+The percentage of households living in rental housing is disproportionately high in case of Champaign City. As we move from the city towards the region, the % of households owing their housing units increase substantially. A majority of the population owns their housing as we move from the city to the region level. However, it is interesting to note here that the percentage of rental housing or owned housing does not cross the 60-40 mark - meaning that although differences exist, they are not stark and tenure is not very unevenly distributed across the population at all 3 levels. 
+
+# 7. Median Home Value 
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+placeHomeValue_2017 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25077",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(NAME,
+         HomeValue_tot = B25077_001E)  
+
+#Champaign County
+countyHomeValue_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25077",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(NAME,
+         HomeValue_tot = B25077_001E) 
+#Region
+regionHomeValue_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25077",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois")) %>% summarize(HomeValue_tot = median(B25077_001E, na.rm = TRUE)) %>% mutate(NAME = "Region") %>% select(NAME, HomeValue_tot)
+
+HomeValue_2017 <- bind_rows(placeHomeValue_2017, countyHomeValue_2017, regionHomeValue_2017)
+rm(placeHomeValue_2017, countyHomeValue_2017, regionHomeValue_2017)
+```
+This section explores the Median Home Value in US Dollars. Attempts will be made to try and link this information with the Tenure analysis, among others. The data is presented across 3 scales - the City, County and Region. 
+```{r, echo=FALSE, message=FALSE}
+#Table
+HomeValue_2017 %>%
+  kbl(caption = "Median Home Values in Champaign - City, County and Region, 2017") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+Both the home value and proportion of rental population is highest in case of Champaign City. These factors can be interrelated since the median household income is least in Champaign City and therefore the ability to own a home is the least. Champaign City also has the highest proportion of minority populations across all scales - demonstrating that such households are particularly vulnerable to housing crises owing to their inability to own a house. Both the median home value and the percentage of population who own a house increase at the region level. This scale also houses a greater proportion of the white population, showing that their income and ability to own a home are higher than other population groups. 
+
+# 8. Housing Cost Burden 
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+place_CostBurden_2017 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25106",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>%
+  mutate(Total=B25106_001E, 
+         Owner_Occupied_Units=B25106_002E,
+         CostBurdened=B25106_006E+B25106_010E+B25106_014E+B25106_018E+B25106_022E,
+         Percent_CostBurdened = (CostBurdened*100)/Owner_Occupied_Units,
+         Rented_Units=B25106_024E,
+         RentBurdened=B25106_028E+B25106_032E+B25106_036E+B25106_040E+B25106_044E,
+         Percent_RentBurdened = (RentBurdened*100)/Rented_Units,
+         Percent_Burdened = ((CostBurdened+RentBurdened)*100)/Total) %>% 
+  select(NAME, Total, 
+         Owner_Occupied_Units, CostBurdened, Percent_CostBurdened,
+         Rented_Units, RentBurdened, Percent_RentBurdened,
+         Percent_Burdened)
+#Champaign County
+county_CostBurden_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25106",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>%
+  mutate(Total=B25106_001E, 
+         Owner_Occupied_Units=B25106_002E,
+         CostBurdened=B25106_006E+B25106_010E+B25106_014E+B25106_018E+B25106_022E,
+         Percent_CostBurdened = (CostBurdened*100)/Owner_Occupied_Units,
+         Rented_Units=B25106_024E,
+         RentBurdened=B25106_028E+B25106_032E+B25106_036E+B25106_040E+B25106_044E,
+         Percent_RentBurdened = (RentBurdened*100)/Rented_Units,
+         Percent_Burdened = ((CostBurdened+RentBurdened)*100)/Total) %>% 
+  select(NAME, Total, 
+         Owner_Occupied_Units, CostBurdened, Percent_CostBurdened,
+         Rented_Units, RentBurdened, Percent_RentBurdened,
+         Percent_Burdened)
+#Region
+region_CostBurden_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25106",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois"))%>%
+  mutate(Total=B25106_001E, 
+         Owner_Occupied_Units=B25106_002E,
+         CostBurdened=B25106_006E+B25106_010E+B25106_014E+B25106_018E+B25106_022E,
+         Rented_Units=B25106_024E,
+         RentBurdened=B25106_028E+B25106_032E+B25106_036E+B25106_040E+B25106_044E,
+         ) %>% 
+  summarise(Total = sum(Total),
+            Owner_Occupied_Units= sum(Owner_Occupied_Units), 
+            CostBurdened=sum(CostBurdened),
+            Rented_Units=sum(Rented_Units),
+            RentBurdened=sum(RentBurdened)) %>% 
+  mutate(NAME = "Region",
+         Percent_CostBurdened = (CostBurdened*100)/Owner_Occupied_Units,
+         Percent_RentBurdened = (RentBurdened*100)/Rented_Units,
+         Percent_Burdened = ((CostBurdened+RentBurdened)*100)/Total) %>% 
+  select(NAME, Total, 
+         Owner_Occupied_Units, CostBurdened, Percent_CostBurdened,
+         Rented_Units, RentBurdened, Percent_RentBurdened,
+         Percent_Burdened)
+
+HousingCostBurden_2017 <- bind_rows(place_CostBurden_2017,
+                                    county_CostBurden_2017,
+                                    region_CostBurden_2017)
+rm(place_CostBurden_2017,county_CostBurden_2017,region_CostBurden_2017)
+```
+Housing cost burden is shown here in two ways - cost burden for owned houses and rent burden for rental housing. The overall percentage of all burdened households is also calculated across all three scales. This section will link itself to the analysis of median home value and tenure as well. 
+```{r, echo=FALSE, message=FALSE}
+#Table
+HousingCostBurden_2017 %>%
+  kbl(caption = "Housing Cost Burden in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+Approximately 20% of the population is cost burdened whereas 50% is rent burdened. This is because the median home values are substantially high and most of the people ~ 50% have to reside in rental housing (owing to their incomes). If 50% of all rented households are rent burdened, therefore a quarter of all households across all spatial levels suffer from rent burden. At an overall level of housing cost burden, approximately 30% of total households struggle to meet their housing costs. This has important ramifications for urban and regional planning. 
+
+Majority of the low income population resides in rental housing and is heavily rent burdened.A majority of the cost burdened households reside in Champaign City, while rent burdened households reside at across all levels, meaning that rent burdened households are not localised within the city, but spread out over the larger county.  Rent burden comes out as a bigger issue across all the levels, showing minor differences between the scales. Therefore rental policy needs to be dealt with at the regional scale instead of focusing on city level interventions. 
+
+
+
+# 9. Residential Vacancy Rate 
+```{r, include=FALSE, message=FALSE}
+#Champaign City
+place_Vacancy_2017 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25002",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign city, Illinois") %>% 
+  select(NAME,
+         Total_units = B25002_001E,
+         Occupied = B25002_002E,
+         Vacant = B25002_003E) %>% 
+  mutate(Percent_occupied = (Occupied*100)/Total_units,
+         Percent_vacant = (Vacant*100)/Total_units)
+
+#Champaign County
+county_Vacancy_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25002",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Champaign County, Illinois") %>% 
+  select(NAME,
+         Total_units = B25002_001E,
+         Occupied = B25002_002E,
+         Vacant = B25002_003E) %>% 
+  mutate(Percent_occupied = (Occupied*100)/Total_units,
+         Percent_vacant = (Vacant*100)/Total_units)
+
+#Region
+region_Vacancy_2017 <- get_acs(
+  geography = "county",
+  state = "IL",
+  table = "B25002",
+  year = 2017,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME %in% c("Champaign County, Illinois", "Ford County, Illinois", "Piatt County, Illinois"))%>%
+summarize(Total_units = sum(B25002_001E, na.rm = TRUE),
+            Occupied = sum(B25002_002E,na.rm = TRUE),
+            Vacant = sum(B25002_003E, na.rm=TRUE)) %>% mutate(NAME = "Region", Percent_occupied = (Occupied*100)/Total_units,
+                                                              Percent_vacant = (Vacant*100)/Total_units) %>% 
+  select(NAME, Total_units, Occupied, Vacant, Percent_occupied, Percent_vacant)
+
+Vacancy_2017 <- bind_rows(place_Vacancy_2017, county_Vacancy_2017, region_Vacancy_2017)
+rm(place_Vacancy_2017, county_Vacancy_2017, region_Vacancy_2017)
+```
+The last section tries to understand how the housing crises emanates on ground through the lens of housing vacancy. A high percentage of vacant housing determines that the existing housing lot is inadequate when it comes to satisfying the needs of the population. 
+```{r, echo=FALSE, message=FALSE}
+#Table
+Vacancy_2017 %>%
+  kbl(caption = "Age Distribution in Champaign - City, County and Region") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+The Champaign city, county and region does not exhibit a stark housing vacancy rate, but combined with the proportion of rental housing and rent burden, it reflects a need to reevaluate the present housing stock in order to understand which income groups it is currently cateing to. 
+
+# Conclusions
+
+Analyzing socio-economic data - race, age, income and housing charateristics helps understand the scale of policy intervention. When it comes to interventions on income and poverty, the city level is the most useful. Female Headed Households are also concentrated at the city level and their vulnerable situation can be best tackled through policies directed at this scale. Housing problems of rent burden are uniformly distributed across all scales and can be best handled through interventions at the regional scale. Understanding the distribution of characteristics across different scales helps understand the primacy of Champaign City within the larger region.
