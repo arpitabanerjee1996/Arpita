@@ -1,0 +1,3189 @@
+---
+title: "Intersectional Approach to Covid-19 Vulnerability as a Design Framework for Housing Spatial Decision Support Systems"
+author: "Arpita Banerjee."
+date: "05/07/2021"
+output:
+  html_notebook:
+    toc: yes
+  html_document:
+    df_print: paged
+    toc: yes
+  pdf_document:
+    toc: yes
+  include: FALSE
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+rm(list=ls())
+library(kableExtra)
+library(tidyverse)
+library(tidycensus)
+library(ggplot2)
+library(sf)
+library(tigris)
+census_api_key("9c5c7647c70b95cd0063a955fabbbf7c0970aa6d")
+```
+
+# 1.Introduction
+Housing has evolved into a huge crisis over the past few decades owing to the 2008 subprime mortgage crisis and the recent blow of the Covid-19 pandemic. As much as the government is creating new avenues for investments in affordable housing, households are invariably faced with an absence of information about the resources available to enhance their housing mobility. Covid-19 has multiplied the impacts of housing segregation and the prior affordability crisis as low-income groups suffer from heavy job losses and increased rent burdens, exacerbating their risk of evictions. In lieu of the above problems, a housing spatial decision support system (Housing SDSS) is envisaged as an option of housing counselling that aids vulnerable population groups. An SDSS provides vulnerable households with necessary information about current housing stock and enable them with relocation options based on their priorities. Normative models of SDSS reveals the complex structure and conceptual elements that they carry. For the purpose of this project, attempts will be made at understanding what are the fundamental principles underlying past models of housing SDSSs, and what kind of an approach can enable us to reinvent a spatial decision support system that would aid the complex and multifaceted requirements of urban housing environments in the aftermath of the Covid-19 pandemic. 
+
+## 1.1 Context and Background
+
+Covid-19 has transformed conceptualization of the housing problem at a global scale – Housing is not just a financial asset and a mode for economic development but is now an indispensable necessity for human health (Layser et al. 2020). Presence or absence of adequate housing determines a household’s susceptibility to and recovery from Covid-19. For example, most low-income households are doubling down during the pandemic, trying to accommodate family members and friends who have lost access to housing due to the economic slump. Doubling down exacerbates Covid risk because overcrowding and absence of a separate room for quarantine risks the entire household with disease contraction. There are multiple underlying factors (historical structures of discrimination and systemic inequalities) that dictate nature of duress is faced by different population groups. 
+
+An important motivation of this project is to envisage a design paradigm for an SDSS that is both reproducible and adaptable to structural changes over time and continues to assist different vulnerable populations despite the preponderance of financial instability and housing crises in the future. It tries to understand the unique positionality of vulnerable populations who are at a risk of facing evictions due to Covid-19. Little research is made to understand the trends of household mobility after evictions, but data from research conducted on specific population groups (such as Latino and black women) tend to suggest that they enter worse housing arrangements and struggle to recover both financially and socially. This indicates that the nature of housing instability has disproportionate impacts for different population groups and the normative models of SDSS which were built for individual cities, or groups of populations under a particular policy may not be equipped to handle the intersectional lens required for larger groups of housing vulnerable populations. 
+
+Through an intersectional analysis of demographic and spatial characteristics, the project identifies several points of difference between three of the most vulnerable housing markets in the country – of Chicago, New York and San Francisco. It then tries to argue how formulate ways in which the a new design paradigm can be defined for Housing Spatial Decision Support Systems that goes beyond the target populations of housing policies, but informs a larger population of vulnerable groups across the city. It lays down design archetypes, or reference populations that are numerically preponderant across the three cities and have unique intersectional requirements for SDSS design, planning and implementation. In the following sections we will first look at what spatial decision systems are and what constitutes a normative model of an SDSS. From there we will progress and move on to building a logic for an intersectional analysis of housing vulnerability as a design paradigm for a Housing SDSS. After a thorough demographic and spatial analysis that is hinged on the census data (5 year - American Community Survey), several design archetypes will be identified, and their policy implications discussed briefly. 
+
+
+## 1.1.1 Spatial Decision Support Systems
+
+For this project, spatial decision support systems will be understood through the examples of SDSSs created by Michael Johnson from Carnegie Mellon University in 2005 and P Sriraj at the University of Illinois at Chicago in 2006, with a greater focus on the former. Taking the example of the Section 8 Housing Choice Voucher Programme in Pittsburgh, Johnson demonstrates that the aspect of housing counselling for low-income household is rife with inadequacies and housing counsellors either lack the technical proficiency (knowledge of trade-offs, complete housing inventory, etc.) or are too burdened with caseload-management to render meaningful help. Therefore, a decision support system equipped with a housing choice algorithm was created to visualize the availability of low-income housing, its spatial biases as well as enable households to harbour their cognitive abilities to make an informed housing decision on the housing unit quality and neighborhood characteristics that they desire or prioritise. A Housing SDSS can therefore be defined as “an integration of geographic information systems, relational databases and multicriteria decision models to provide specific, structured guidance to housing clients” (Johnson, 2005). A normative housing SDSS is built to accommodate housing relocation under a system of normalcy for targeted clients of a particular housing program. 
+
+A normative model of Housing SDSS envisages housing as a means for economic development (Johnson, 2005; Sriraj, et al. 2006). It identifies housing vulnerability directly through the lens of an existing housing policy or programme. As a result of this, in most occasions, housing vulnerability intersects typically with income vulnerability, identifying poor people as target clients for the SDSS. Under certain circumstances vulnerability can also intersect with racial minorities and oversampling for such clients have been done in past models. The criteria for housing preference were studied through primary surveys targeted for such population groups (oversampling for said vulnerable populations). Following a preference survey, an Analytical Hierarchy Matrix was designed through a Housing Choice Algorithm that considered the different preference criteria for different clients. Factors considered via this model include , but are not limited to, presence/absence of nearby facilities, safety, security, presence/absence of social networks, proximity to workplaces, characteristics of housing unit and neighborhoods. 
+
+The normative model of an SDSS was built on several assumptions that may not necessarily stand strong in the face of a global pandemic. For example, during Covid-19, housing is not just a means of economic development, it is also a critical infrastructure for health. When it comes to delineating a body of target clients for an SDSS, current housing policy may not be effective in arresting the impending housing crises, due to several gaps in the conception of the problem (Layser et. al, 2020). What is therefore required is a more people centric intersectional approach that not only identifies vulnerabilities within large population groups in a city, but also helps in designing policy/information models that can cater to their unique needs. In fact, the very need for SDSSs has now changed – we have moved away from SDSS as a tool for relocation, to one for recovery. Emergence of new complicated dimensions of housing vulnerability and changes in expectation from existing infrastructure has prompted the need for a new model of SDSS that is hinged upon intersectional design. Through this project we explore how intersectionality plays an important role in understanding the basic characteristics of housing vulnerability across cities and how they can aid in SDSS design. 
+
+## 1.1.2 Housing Vulnerabiity and Intersectionality
+
+There are hundreds of indicators that can be considered while looking at Covid-19 housing instability risk. Some of these are job losses, doubling up, the impacts of the Covid-19 relief Bill and the CDC Federal Eviction Moratorium and Rental Assistance (Cunningham, et al., 2020). Covid-19 has seen uneven economic recovery. Number of renters protected by the CDC moratorium (total 43 million across the US) has conflicted with rental assistance existing in certain states. For example, California’s rent moratorium might charge late fees or penalties for the rent that is due and back rent will be treated as consumer debt. Most of the states do not clarify these positions in comprehensive detail. 
+
+There is a consensus around the issue that different intersectional groups within the population have faced differential impacts owing to the Covid-19 housing crises. All in all, 13.6% or 9.5 million renters report problems in rent payment. Within this larger group of risk prone households nationwide, 16.7% are black, 22.8% are Hispanic/Latinx, 8.3% of white renters. When it comes to backlogs on utility bills – 28.9% black renters, 25.9% Hispanic/Latinx renters report inability to pay utility bills on time (Cunningham, et al., 2020). The Urban Institute Coronavirus Tracking Survey notes that 10% of all households were behind on rent had 5% received eviction note or threat. People of color were disproportionately affected by the unemployment, job losses and housing instability. For example, Black and Latinx/Hispanic renters were more likely to face eviction threats. Even the worry of being able to pay rent the following month affects people of color disproportionately. Out of the 27.7% of total renters who were worried, 45.5% were Hispanic/Latinx and 28% were Black. Black and Hispanic renters also face extremely high rates of eviction since the beginning of March 2020 – nearly 4 times higher than what is faced by white renters (almost 8%, vis-à-vis 2% ) – adding to the burden of Covid-19 based job losses.
+
+Susanne Luhmann from the University of Alberta notes how the Covid-19 pandemic has exposed wide disparities between among the effects on people of colour, indigenous groups, women, people with disabilities, LGBTQ2S and poor people compared to other majority groups within the population. Although most of the data collected does not go deeper into these larger more specific intersectionalities, understanding broader demographic intersections of race, income and poverty can help us draw a few important relationships between the role of racism, colonialism, sexism and other hsitorical forms of oppressions and their impact on environmental justice, health and social equity. Since society and space is currently organised and affected  economically and culturally based on these historical patterns, understanding the backdrop of intersectionality can enable us to intervene in the housing problem with a long-term view in mind. Since spatial decision systems are conceptualised to help marginalised populations within the city with a similar approach in mind - an intersectional lens to creating design populations and archetypes could be a very relevant way to understand inputs for a prototype SDSS. At the very least it could alter some of the policy implications of normative models of SDSS and add nuance and depth to ways of improving upon it. 
+
+## 1.3 Methodology  
+
+The methodology for this analysis is simple. It consists of a basic understanding of a normative model of an SDSS through its inputs, target clients, methods and outputs. These elements are then recontextualised in the scenario of the Covid-19 pandemic where a new understanding of housing vulnerability has emerged, leading to sharper demographic and spatial considerations. We then assume several intersectional dimensions of available data (census data) at the primary, secondary and tertiary levels (diagram shown below). The data is analysed at the city level for three of the most prominent cities in the USA – Chicago, New York and San Francisco. From the different intersectional dimensions visible across the three cities, three design archetypes are laid down for each city to underline some of the major population groups that are vulnerable during Covid-19. These archetypes can be interpreted as design populations for future SDSSs, and they are markedly different and more complex than the nature of design populations/target clients understood through past models. By using an intersectional lens, their unique needs will also be provisioned for in the design of an SDSS. Instead of a broad oversampling for racial minorities, this will help create a well-defined method for understanding housing vulnerability and their implications on housing location preference and overall recovery at the city scale.  
+
+### 1.3.1 Data Sources
+
+The data has been taken from the 5 year American Community Survey Census data available at https://data.census.gov/cedsci/. They have all been collected for the year 2019 at the city, or tract scales. For mapping residential segregation, simple features are imported at both the place and tract level to show city boundaries along the tract lines. The following data sources along with their census table numbers have been analyses in R. 
+
+| Scale        | Census Table Number | Description                 |
+|--------------|---------------------|-----------------------------|
+| City, Tract  | B02001              | Race                        |
+| City         | B01001              | Age                         |
+| City         | B11001              | Female Headed Households    |
+| City, Tract  | B19013              | Median Household Income     |
+| City         | B17001              | Poverty                     |
+| City         | B25003              | Housing Tenure              |
+| City         | S2503               | Housing Cost                |
+| Tract, Place | Simple Features     | Mapping Housing Segregation |
+
+### 1.3.2 Designing Archetypes
+
+The normative model of an SDSS used the design population/design archetype mentioned in the housing policy/programme as a point of reference. However, in case of this model, such a method has been supplemented for a better. There are a variety of ways in which archetypes can be designed for an SDSS. One of the most rigorous ways of performing that could be overlaying different population groups spatially and identifying clusters. It would take a greater amount of technical skill to process such complex analysis was not present at the time of this analysis. 
+
+For the sake of this project, a very simple method of designing archetypes has been adopted. We are primarily looking at the intersection of age, race and income to delineate three groups at varying degrees of numerical preponderance across the three cities, following an analysis of their overarching demographic and spatial characteristics. The aim here is to delineate archetypes of some of the largest vulnerable groups within the populations of the three cities, while understanding that their relative composition across the cities will be very different. The largest vulnerable groups in one city can represent 50% of all vulnerable groups in one city, whereas it can represent 70% of all groups in another city. Therefore, intersection exists not only qualitatively, but also quantitatively. 
+
+The trade-offs between this simplistic analysis of intersectional dimensions of housing vulnerability, vis-à-vis, a more robust spatial data driven creation of design archetypes are many. However, it is important to understand that the former leads to the latter, and this type of a preliminary analysis is indispensable to a deeper, more meaningful and analytical model of intersectional research of housing vulnerability. 
+
+### 1.3.3 Scale of Research
+
+In normative models of an SDSS, the census tract is utilised as the scale of research. A group of 6 contiguous census tracts were utilised in both Johnson and Sriraj’s research in the early 2000s. Earlier models made assumptions about the reproducibility of an SDSS across multiple spatial scales. However, in case of the current model, the primary aim is to unpack some of these assumptions about the applicability and reproducibility of an SDSS model during a nationwide pandemic. Transformation of the scenario necessitated transformation of scales and a bird eye view to housing vulnerability was deemed essential to understanding the nature of SDSS that could be proposed. For this reason, the city level, across three cities was chosen as the level at which this analysis was performed. When it came to analysis of segregation as spatial vulnerability, the analysis was also performed at the census tract level.  
+
+### 1.3.4 Target Audience and Contributions to Existing Literature
+
+In general, research on Housing Spatial Decision Support Systems contributes to the existing literature on housing across multiple disciplines – from urban planning to real estate and policy design. As mentioned earlier, not much is known about the housing mobility of households facing the risk of evictions (especially during Covid-19) or the intersectional dimensions of housing vulnerability that it could address. The study that informs the design framework of the SDSS and tries to consolidate the concerns of such less-researched areas while adding to them critically. 
+
+This framework is valuable because it allows researchers to understand more about the kinds of unique vulnerable groups across different cities and develop an appreciation of contextual factors that contribute to their precarious housing situations. If successful, this project can be a step towards bringing information equity in the housing domain and inspiring the agency of low-income households to have an informed stake in their housing choices. Availability of such information in the public domain can also reveal spatial biases and enable policy makers and urban planners to intervene into predominant socio-spatially disadvantaged neighborhoods. Since the model will be built in R and the code available for dissemination, the framework can be reproduced in geographies beyond the case study area.
+
+
+# 2. An Intersectional Analysis of Demographic Vulnerability
+
+In the words of Professor Kimberle Crenshaw, intersectionality refers to “is a lens through which you can see where power comes and collides, where it interlocks and intersects”. It can be expanded to understand that an intersectionality refers to how systemic oppressions and injustices are overlayed upon different population groups doubling their vulnerability under different processes. The demographic analysis performed in this section will look at intersectionality through a mix of either two, or three variables. They have been referred to as 2-degree and 3-degree levels of intersectionality. An example of 2-degree intersectionality could be an analysis of female headed households, by race across three cities. An example of 3- degree analysis could be an analysis of poverty that looks at the distribution of poor persons across age and gender groups. Intersectionality is best expressed through a Venn diagram where the intersection of different sets represents the overlapping of vulnerabilities. 
+
+## 2.1 List of Characteristics
+
+In this section we are primarily looking at the following demographic criteria, from the ACS 5 Year data for 2019. The diagram below shows the distribution of data across both demographic and spatial characteristics.
+
+| Intersectional Depth | Characteristic                |        |        |
+|----------------------|-------------------------------|--------|--------|
+| 1 degree             | Race                          |        |        |
+| 1 degree             | Age                           |        |        |
+| 2 degree             | Female Headed Households      | Race   |        |
+| 2 degree             | Median Household Income       | Race   |        |
+| 3 degree             | Poverty                       | Age    | Sex    |
+| 2 degree             | Tenure                        | Race   |        |
+| 2 degree             | Cost Burden                   | Income |        |
+| 3 degree             | Segregation through Geography | Race   | Income |
+
+## 2.2 Race
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Study on Race
+#Chicago
+IL_race_2019 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+IL_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "Chicago city, Illinois") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+IL_race_2019 <- bind_cols(IL_race_2019, IL_latino_2019)
+IL_race_2019 <- IL_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(IL_latino_2019)
+
+#New York
+NY_race_2019 <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+NY_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "New York city, New York") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+NY_race_2019 <- bind_cols(NY_race_2019, NY_latino_2019)
+NY_race_2019 <- NY_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(NY_latino_2019)
+
+#San Francisco
+CA_race_2019 <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B02001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>%
+  mutate(pop_other = B02001_001E - (B02001_002E + B02001_003E + B02001_005E)) %>%
+  rename(
+    pop_tot = B02001_001E,
+    pop_white = B02001_002E,
+    pop_black = B02001_003E,
+    pop_asian = B02001_005E
+  ) %>%
+  select(NAME, pop_tot, pop_white, pop_black, pop_asian, pop_other) %>%
+  mutate(percentpop_white = (pop_white * 100) / pop_tot) %>%
+  mutate(percentpop_black = (pop_black * 100) / pop_tot) %>%
+  mutate(percentpop_asian = (pop_asian * 100) / pop_tot) %>%
+  mutate(percentpop_other = (pop_other * 100) / pop_tot) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+CA_latino_2019 <-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B03002",
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  ) %>%
+  filter(NAME == "San Francisco city, California") %>%
+  rename(pop_tot = B03002_001E,
+         pop_latino = B03002_012E,) %>%
+  select(NAME, pop_tot, pop_latino) %>%
+  mutate(percentpop_latino = (pop_latino * 100) / pop_tot) %>%
+  select(NAME,
+         pop_latino,
+         percentpop_latino)
+CA_race_2019 <- bind_cols(CA_race_2019, CA_latino_2019)
+CA_race_2019 <- CA_race_2019 %>% mutate(NAME = NAME...1) %>%
+  select(
+    NAME,
+    pop_tot,
+    pop_white,
+    percentpop_white,
+    pop_black,
+    percentpop_black,
+    pop_latino,
+    percentpop_latino,
+    pop_asian,
+    percentpop_asian,
+    pop_other,
+    percentpop_other
+  )
+rm(CA_latino_2019)
+
+#Bringing them together
+Race_Comparison <- bind_rows(IL_race_2019, NY_race_2019, CA_race_2019)
+rm(IL_race_2019, CA_race_2019, NY_race_2019)
+```
+
+
+```{r,echo = FALSE, message=FALSE}
+# Table
+Race_Comparison%>% select(NAME, pop_tot, percentpop_white, percentpop_black, percentpop_latino, percentpop_asian, percentpop_other) %>% 
+  kbl(caption = "Distribution of Racial Categories Across Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+Across all cities, New York has the highest population, followed by Chicago. As a result of this populations belonging to each individual racial category are also very high in New York. Therefore, the scale of the issue would vary widely across the three cities. Looking at the percentages of different population groups could also indicate the concentration of minorities across different cities. For example, the percentage population of white is the highest in Chicago, followed closely by San Francisco. However, even if the % population of minorities is least in New York City, the sheer number of people belonging to racial minorities tells a completely different story. 
+
+In case of percentage black population, both Chicago and New York house very high numbers. Black population also represents one of the most vulnerable population groups during Covid-19, therefore when a low-income housing SDSS is designed for the city of Chicago and New York, it is necessary to oversample for the opinions of black people [in the locational preference survey] owing to their share in the overall demographic constitution. Latinos represent another population group whose problems need to be given special preference while designing inputs for a housing SDSS for both Chicago and New York City. However, in case of San Francisco, the same oversampling may be done for Asians, since they constitute greater than 34% of the population, while both blacks and Latinos constitute less than 20% of the population. 
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Race_Comparison %>% ggplot(aes(y=pop_tot, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = pop_tot), vjust = -0.5)+labs(title = "Total Population across 3 Major Cities, 2019")
+```
+Population of New York City is the greatest. Chicago comprises of approximately 30% of the entire population of New York City, while San Francisco has only 10% of the population. This has important ramifications for the overall picture of housing crises in the city. A greater population also implies a greater scale of the crises, and a greater need for measures to stabilize housing inequities. This would imply that the scale of housing crises would differ across all the different cities, requiring differential inputs and location criteria for designed SDSSs. 
+
+### 2.2.1 Minority Populations
+
+```{r,echo=FALSE, message=FALSE}
+Race_Comparison %>% ggplot(aes(y=(100-percentpop_white), x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = (100-percentpop_white)), vjust = -0.5)+labs(title = "Percentage Population of Non-Whites across 3 Major Cities, 2019")
+```
+Although approximately 50% of all cities comprise of minority Non-white populations, New York City demonstrates the greatest percentage of non-whites. San Francisco is a close second, meaning that despite the greater population in Chicago, the percentage of minorities is less. The indicator of % of non-white population has a weight of 1.0 in the overall evaluation. 
+
+```{r,echo=FALSE, message=FALSE}
+Race_Comparison %>% ggplot(aes(y=percentpop_black, x=NAME))+geom_col()+theme_minimal()+ geom_text(aes(label = percentpop_black), vjust = -0.5)+labs(title = "Percentage of Black Population across 3 Major Cities, 2019")
+```
+Despite the trends in the total and minority populations, Chicago has the highest percentage of Blacks. San Francisco falls substantially below both New York and Chicago who have comparable Black populations. Chicago therefore represents a greater vulnerability to the housing crises, because black communities have been disproportionately affected due to the Covid-19 pandemic. The indicator of % of black population has a weight of 1.0 in the overall evaluation. 
+
+## 2.3. Age
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Study on Age
+#Chicago
+IL_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Chicago city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "Chicago city, Illinois") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+#New York
+NY_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "New York city, New York") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "New York city, New York") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+
+#San Francisco
+CA_age_2019 <-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B01001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "San Francisco city, California") %>% 
+  mutate(variable = str_replace(variable, "B01001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "26"))%>% 
+  mutate(variable_cat = case_when(
+    variable == "03" ~ "19 and Below", 
+    variable == "04" ~ "19 and Below", 
+    variable == "05" ~ "19 and Below",
+    variable == "06" ~ "19 and Below",
+    variable == "07" ~ "19 and Below",
+    variable == "08" ~ "20 to 44",
+    variable == "09" ~ "20 to 44",
+    variable == "10" ~ "20 to 44",
+    variable == "11" ~ "20 to 44",
+    variable == "12" ~ "20 to 44",
+    variable == "13" ~ "20 to 44",
+    variable == "14" ~ "20 to 44",
+    variable == "15" ~ "45 to 64",
+    variable == "16" ~ "45 to 64",
+    variable == "17" ~ "45 to 64",
+    variable == "18" ~ "45 to 64",
+    variable == "19" ~ "65 and Above",
+    variable == "20" ~ "65 and Above",
+    variable == "21" ~ "65 and Above",
+    variable == "22" ~ "65 and Above",
+    variable == "23" ~ "65 and Above",
+    variable == "24" ~ "65 and Above",
+    variable == "25" ~ "65 and Above",
+    variable == "27" ~ "19 and Below",
+    variable == "28" ~ "19 and Below",
+    variable == "29" ~ "19 and Below",
+    variable == "30" ~ "19 and Below",
+    variable == "31" ~ "19 and Below",
+    variable == "32" ~ "20 to 44",
+    variable == "33" ~ "20 to 44",
+    variable == "34" ~ "20 to 44",
+    variable == "35" ~ "20 to 44",
+    variable == "36" ~ "20 to 44",
+    variable == "37" ~ "20 to 44",
+    variable == "38" ~ "20 to 44",
+    variable == "39" ~ "45 to 64",
+    variable == "40" ~ "45 to 64",
+    variable == "41" ~ "45 to 64",
+    variable == "42" ~ "45 to 64",
+    variable == "43" ~ "45 to 64",
+    variable == "44" ~ "65 and Above", 
+    variable == "45" ~ "65 and Above",
+    variable == "46" ~ "65 and Above",
+    variable == "47" ~ "65 and Above",
+    variable == "48" ~ "65 and Above",
+    variable == "49" ~ "65 and Above"
+  )
+  ) %>% group_by(variable_cat) %>% 
+  summarise(age=sum(estimate)) %>% 
+  mutate(pop_tot = sum(age), NAME = "San Francisco city, California") %>% 
+  mutate(percent_pop = (age*100)/pop_tot) %>% 
+  select(NAME, Age_Category= variable_cat, Population_Per_Category = age, 
+         Percentage_Per_Category = percent_pop)
+
+#Together
+Age_Comparison <- bind_rows(IL_age_2019,NY_age_2019,CA_age_2019)
+rm(IL_age_2019,NY_age_2019,CA_age_2019)
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Age_Comparison %>% ggplot(aes(y=Population_Per_Category, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Population in different age categories across 3 Major Cities, 2019") 
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+Age_Comparison%>%
+  kbl(caption = "Distribution of Age Categories Across Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+
+New York City, commensurate with its total population trend, shows the highest population of 19-year-olds and below. Similarly, the population of persons above 65 years of age is also considerably high in New York. When it comes to vulnerable populations by age (children and senior citizens), Chicago follows a similar pattern of age distribution as New York. However, in case of San Francisco, the percentage of senior citizens is the highest. Therefore, every city displays unique features of age distribution, in terms of population and its composition. 
+
+Vulnerable population groups for the cities of New York and Chicago are mostly comprised of persons below 19 years of age. In case of San Francisco, the majority of vulnerable population is comprised of persons above 65 years of age. 
+
+The greatest age category across all three cities belongs to the 20-44 category, followed by populations belonging to the age category of 45-64 years. The majority of the workforce is concentrated in this population category. The vulnerability of this age group will be captured in the rest of the indicators. For the purposes of defining an archetype, these categories are not considered in the age-vulnerable populations, since their physical health related vulnerability is not as acute as the age-groups 19 and below, and 65 and above.   
+
+
+## 2.4.Female Occupied Households
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Female Headed Households
+#Chicago
+IL_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+IL_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+IL_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+IL_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+IL_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+IL_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+IL_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+IL_femaleHH_2019 <- bind_cols(IL_femaleHH_2019_total,IL_femaleHH_2019_white, IL_femaleHH_2019_black, IL_femaleHH_2019_latino, IL_femaleHH_2019_Asian, IL_femaleHH_2019_AIAN, IL_femaleHH_2019_other)
+
+IL_femaleHH_2019_Percentage <- IL_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+IL_femaleHH_2019 <- bind_cols(IL_femaleHH_2019, IL_femaleHH_2019_Percentage)
+IL_femaleHH_2019 <- IL_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(IL_femaleHH_2019_AIAN, IL_femaleHH_2019_total, IL_femaleHH_2019_white, IL_femaleHH_2019_black, 
+   IL_femaleHH_2019_latino, IL_femaleHH_2019_Asian, IL_femaleHH_2019_other, IL_femaleHH_2019_Percentage)
+
+#New York
+NY_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+NY_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+NY_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+NY_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+NY_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+NY_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+NY_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+NY_femaleHH_2019 <- bind_cols(NY_femaleHH_2019_total,NY_femaleHH_2019_white, NY_femaleHH_2019_black, NY_femaleHH_2019_latino, NY_femaleHH_2019_Asian, NY_femaleHH_2019_AIAN, NY_femaleHH_2019_other)
+
+NY_femaleHH_2019_Percentage <- NY_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+NY_femaleHH_2019 <- bind_cols(NY_femaleHH_2019, NY_femaleHH_2019_Percentage)
+NY_femaleHH_2019 <- NY_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(NY_femaleHH_2019_AIAN, NY_femaleHH_2019_total, NY_femaleHH_2019_white, NY_femaleHH_2019_black, 
+   NY_femaleHH_2019_latino, NY_femaleHH_2019_Asian, NY_femaleHH_2019_other, NY_femaleHH_2019_Percentage)
+
+#San Francisco
+CA_femaleHH_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, femaleHH_tot = B11001_006E)
+
+CA_femaleHH_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_white = B11001A_006E)
+
+CA_femaleHH_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_black = B11001B_006E)
+
+CA_femaleHH_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_AIAN = B11001C_006E)
+
+CA_femaleHH_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_Asian = B11001D_006E)
+
+CA_femaleHH_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_other = B11001F_006E)
+
+CA_femaleHH_2019_latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B11001I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(femaleHH_latino = B11001I_006E)
+
+CA_femaleHH_2019 <- bind_cols(CA_femaleHH_2019_total,CA_femaleHH_2019_white, CA_femaleHH_2019_black, CA_femaleHH_2019_latino, CA_femaleHH_2019_Asian, CA_femaleHH_2019_AIAN, CA_femaleHH_2019_other)
+
+CA_femaleHH_2019_Percentage <- CA_femaleHH_2019 %>% 
+  mutate(Percent_White = ((femaleHH_white)*100)/femaleHH_tot,
+         Percent_Black = ((femaleHH_black)*100)/femaleHH_tot,
+         Percent_Latino =((femaleHH_latino)*100)/femaleHH_tot,
+         Percent_Asian = ((femaleHH_Asian)*100)/femaleHH_tot,
+         Percent_AIAN = ((femaleHH_AIAN)*100)/femaleHH_tot,
+         Percent_other = ((femaleHH_other)*100)/femaleHH_tot) %>% 
+  select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, 
+         Percent_Asian, Percent_AIAN, Percent_other)
+
+CA_femaleHH_2019 <- bind_cols(CA_femaleHH_2019, CA_femaleHH_2019_Percentage)
+CA_femaleHH_2019 <- CA_femaleHH_2019 %>% select(NAME = NAME...1, femaleHH_tot = femaleHH_tot...2, 
+                                                femaleHH_white, Percent_White, 
+                                                femaleHH_black, Percent_Black, 
+                                                femaleHH_latino, Percent_Latino, 
+                                                femaleHH_Asian, Percent_Asian, 
+                                                femaleHH_AIAN, Percent_AIAN, 
+                                                femaleHH_other, Percent_other)
+rm(CA_femaleHH_2019_AIAN, CA_femaleHH_2019_total, CA_femaleHH_2019_white, CA_femaleHH_2019_black, 
+   CA_femaleHH_2019_latino, CA_femaleHH_2019_Asian, CA_femaleHH_2019_other, CA_femaleHH_2019_Percentage)
+
+#Together
+FemaleHH_Comparison <- bind_rows(IL_femaleHH_2019,NY_femaleHH_2019,CA_femaleHH_2019)
+rm(IL_femaleHH_2019,NY_femaleHH_2019,CA_femaleHH_2019)
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+FemaleHH_Comparison %>% mutate(PercentNon_White = 100-Percent_White) %>% ggplot(aes(y=femaleHH_tot, x=NAME))+geom_col()+geom_text(aes(label = PercentNon_White), vjust = -0.5)+theme_minimal()+labs(title = "Non-White Female headed Households (% and Number) across 3 Major Cities, 2019")
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+FemaleHH_Comparison%>%select(NAME, femaleHH_tot, Percent_White, Percent_Black, Percent_Latino, Percent_Asian, Percent_other) %>% 
+  kbl(caption = "Distribution of Female Headed Households, as per Racial Categories Across Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+
+In this scenario, four main indicators are considered – total number of female headed households, percentage of non-white female headed households in the city. New York and Chicago both have a high number of female headed households, New York has approximately 2.5 times more than Chicago. San Francisco has a small number of female headed households. It is interesting to note that when it comes to female headed households, the % of white households is extremely low. This shows that white two-parent households are generally more stable than non-white households, because the incidence of female headed households is significantly greater in case of non-white populations. In case of New York, 73% of all female headed households are non-white, 71% in case of Chicago and 66% in case of San Francisco. This also shows that female headed households, in general, have a higher vulnerability to the Covid-19 pandemic. Since the percentage of black population is highest in Chicago, it is not surprising to see that the percentage of black female headed households is also highest in Chicago. However, looking at Latino populations, the trend changes significantly. San Francisco has a greater percentage of Latina female headed households as compared Chicago, and New York has the highest overall. 
+
+Therefore, when it comes to the identification of indicators of vulnerability across the three cities, they correspond to different racial categories of female headed households. Groups of vulnerable female-headed households in Chicago are black. In case of New York, both black and Latina female headed households show similar percentages and display comparable compositions of vulnerable groups. In case of the San Francisco, Asian women head the majority of female headed households. 
+
+Across all the cities, the highest number of female headed households are captured in New York city. Approximately ¼ of the total number of female headed households are captured in Chicago and in case of San Francisco, it is less than 10% of that of New York. The differential distribution of female headed households across different cities points out the scale and intensity of the issue – in case of New York, this indicator captures a sizeable population for an SDSS, whereas in case of San Francisco, it may not be the case.
+
+
+## 2.5. Median Household Income
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Median Household Income
+#Chicago
+IL_income_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+IL_income_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_white = B19013A_001E)
+
+IL_income_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_black = B19013B_001E)
+
+IL_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+IL_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+IL_income_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_other = B19013F_001E)
+
+IL_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+IL_income_2019 <- bind_cols(IL_income_2019_total,IL_income_2019_white, IL_income_2019_black, IL_income_2019_latino, IL_income_2019_Asian, IL_income_2019_AIAN, IL_income_2019_other)
+IL_income_2019_Difference_from_Average <- IL_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+IL_income_2019 <- bind_cols(IL_income_2019, IL_income_2019_Difference_from_Average)
+IL_income_2019 <- IL_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(IL_income_2019_AIAN, IL_income_2019_total, IL_income_2019_white, IL_income_2019_black, 
+   IL_income_2019_latino, IL_income_2019_Asian, IL_income_2019_other, IL_income_2019_Difference_from_Average)
+
+#New York
+rm(NY_income_2019)
+NY_income_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+NY_income_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_white = B19013A_001E)
+
+NY_income_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_black = B19013B_001E)
+
+NY_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+NY_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+NY_income_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_other = B19013F_001E)
+
+NY_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+NY_income_2019 <- bind_cols(NY_income_2019_total,NY_income_2019_white, NY_income_2019_black, NY_income_2019_latino, NY_income_2019_Asian, NY_income_2019_AIAN, NY_income_2019_other)
+NY_income_2019_Difference_from_Average <- NY_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+NY_income_2019 <- bind_cols(NY_income_2019, NY_income_2019_Difference_from_Average)
+NY_income_2019 <- NY_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(NY_income_2019_AIAN, NY_income_2019_total, NY_income_2019_white, NY_income_2019_black, 
+   NY_income_2019_latino, NY_income_2019_Asian, NY_income_2019_other, NY_income_2019_Difference_from_Average)
+
+#San Francisco
+CA_income_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, MHHI_tot = B19013_001E)
+
+CA_income_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_white = B19013A_001E)
+
+CA_income_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_black = B19013B_001E)
+
+CA_income_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_AIAN = B19013C_001E)
+
+CA_income_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_Asian = B19013D_001E)
+
+CA_income_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_other = B19013F_001E)
+
+CA_income_2019_latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B19013I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_latino = B19013I_001E)
+
+CA_income_2019 <- bind_cols(CA_income_2019_total,CA_income_2019_white, CA_income_2019_black, CA_income_2019_latino, CA_income_2019_Asian, CA_income_2019_AIAN, CA_income_2019_other)
+CA_income_2019_Difference_from_Average <- CA_income_2019 %>% 
+  mutate(PercentDiff_White = ((MHHI_white - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Black = ((MHHI_black - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Latino =((MHHI_latino - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_Asian = ((MHHI_Asian - MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_AIAN = ((MHHI_AIAN- MHHI_tot)*100)/MHHI_tot,
+         PercentDiff_other = ((MHHI_other- MHHI_tot)*100)/MHHI_tot) %>% 
+  select(NAME, MHHI_tot, PercentDiff_White, PercentDiff_Black, PercentDiff_Latino, 
+         PercentDiff_Asian, PercentDiff_AIAN, PercentDiff_other)
+CA_income_2019 <- bind_cols(CA_income_2019, CA_income_2019_Difference_from_Average)
+CA_income_2019 <- CA_income_2019 %>% select(NAME = NAME...1, MHHI_tot = MHHI_tot...2, 
+                                            MHHI_white, PercentDiff_White, 
+                                            MHHI_black, PercentDiff_Black, 
+                                            MHHI_latino, PercentDiff_Latino, 
+                                            MHHI_Asian, PercentDiff_Asian, 
+                                            MHHI_AIAN, PercentDiff_AIAN, 
+                                            MHHI_other, PercentDiff_other)
+rm(CA_income_2019_AIAN, CA_income_2019_total, CA_income_2019_white, CA_income_2019_black, 
+   CA_income_2019_latino, CA_income_2019_Asian, CA_income_2019_other, CA_income_2019_Difference_from_Average)
+
+#Together
+Income_Comparison <- bind_rows(IL_income_2019,NY_income_2019,CA_income_2019)
+rm(IL_income_2019,NY_income_2019,CA_income_2019)
+```
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=MHHI_tot, x=NAME))+geom_col()+geom_text(aes(label = MHHI_tot), vjust = -0.5)+theme_minimal()+labs(title = "Median Annual HH Income ($) across 3 Major Cities, 2019")
+
+```
+
+Income levels show wide disparities across New York/Chicago and San Francisco. The extremely high median income values in San Francisco may have direct ramifications on the nature of rental accommodation that people can acquire in the city, pointing towards a highly heated up housing market. In case of both Chicago and New York, the housing scenario may not exhibit as disproportionately high costs as San Francisco, but continue t demonstrate heated, housing vulnerable markets across the cities. 
+
+```{r, echo = FALSE, message=FALSE}
+#Table
+Income_Comparison%>%select(NAME, MHHI_tot, MHHI_white, MHHI_black, MHHI_latino, MHHI_Asian, MHHI_AIAN, MHHI_other) %>% 
+  kbl(caption = "Distribution of Median Household Income, as per Racial Categories Across Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+Across all the cities, the highest median income is captured among the white population. Asians represent the second highest earning group, and the highest earning minority population across all the 3 cities. The lowest median income values are captured amongst the black population – delineating them as the most historically vulnerable population groups across all cities and a target group for the low income housing SDSS proposal being laid out. 
+
+In case of black populations, they earn the least in Chicago, followed by San Francisco. However, the acuteness of this income disparity is greatest in case of San Francisco because this area also records the highest values for overall median income distribution. Lowest Latino incomes are recorded in case of New York city, representing an acute intersectionality between race and income, that is not proportional to overall median household income. Asian incomes and American Indian populations represent incomes which are proportional in value to the overall median income distributions across the three cities. 
+
+
+### 2.5.1. Median Household Income across Different Races
+
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_White, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_White,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and White Income, 2019")
+```
+
+
+```{r, echo = FALSE, message=FALSE}
+#Table
+Income_Comparison%>%select(NAME, PercentDiff_White) %>% 
+  kbl(caption = "Percentage Difference between Overall Median Household Income (MHHI) and White MHHI  in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+In case of Chicago the white incomes show the highest positive deviations from the median income, followed by New York. The lowest positive difference between overall and white median household income is the least in case of San Francisco, indicating that certain minority groups (Asians) are substantial contributors to the median household income for the city. In case of Chicago, ramifications of concentration of incomes in case of the white population can be elaborated in the later section on housing segregation. 
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Black, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Black,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Black Income, 2019")
+```
+
+```{r, echo = FALSE, message=FALSE}
+#Table
+Income_Comparison%>%select(NAME, PercentDiff_Black) %>% 
+  kbl(caption = "Percentage Difference between Overall Median Household Income (MHHI) and Black MHHI  in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+Between Chicago and New York, the income disparity of blacks from overall median income is greater in case of Chicago. It represents an important intersectionality in the sense that the proportion of black population and black female headed households is also the largest in Chicago. The income disparity for blacks is least in case of New York and highest in case of San Francisco. Interestingly enough, the black population is also the smallest in this city. It is therefore possible that they represent the most acutely vulnerable population category in the city of San Francisco.
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Latino, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Latino,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Latino Income, 2019")
+```
+
+```{r, echo = FALSE, message=FALSE}
+#Table
+Income_Comparison%>%select(NAME, PercentDiff_Latino) %>% 
+  kbl(caption = "Percentage Difference between Overall Median Household Income (MHHI) and Latino MHHI  in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+
+In case of Latino households in Chicago, the income disparities are the least. Income disparities are similar between the Latino households in San Francisco and New York City. However, in case of New York they represent a more vulnerable population in the sense that they are a substantial population group and have a large population of female headed households as well. In case of San Francisco, they do represent a vulnerable population group, but black households are comparatively more vulnerable. Therefore, for an archetypal reference, it might be useful to take Latino households as reference for New York City, vis-à-vis, black households in San Francisco and Chicago. 
+
+```{r,echo=FALSE, message=FALSE}
+#Graphs
+Income_Comparison %>% ggplot(aes(y=PercentDiff_Asian, x=NAME, fill = "yellow"))+geom_col()+ylim(-100,100)+geom_text(aes(label = round(PercentDiff_Asian,0)), vjust = -0.5)+theme_minimal()+labs(title = "% Difference between Median HH Income and Asian Income, 2019")
+```
+
+```{r, echo = FALSE, message=FALSE}
+#Table
+Income_Comparison%>%select(NAME, PercentDiff_Asian) %>% 
+  kbl(caption = "Percentage Difference between Overall Median Household Income (MHHI) and Asian MHHI  in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+
+```
+ 
+Although Asian incomes are substantially high in case of San Francisco, they continue represent a negative deviation from the overall median household income in the city. This represents an interesting intersectionality since they are a large population group residing in the area, primarily engaged in the Tech industry. This might also indicate, that although they engage in the same industry as the majority population group, they earn substantially less than the white population. This represents an important dimension for income and housing vulnerability that is not reflected in other cities. Despite their higher incomes, Asians therefore might be subjected to economic opportunities that are biased against them, making them an important consideration for an archetype for San Francisco’s SDSS Design. 
+
+## 2.6.Poverty
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+##Poverty
+#Chicago
+IL_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "IL",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "Chicago city, Illinois") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+IL_poverty_female <- IL_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+IL_poverty_male <- IL_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+IL_poverty_total <- IL_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "Chicago city, Illinois") 
+IL_poverty_2019 <- bind_cols(IL_poverty_total, IL_poverty_male, IL_poverty_female) %>% select(NAME, Age_Category = age_cat...1, Total_Population_BelowPoverty = poverty_total,
+                                                                                              Total_Males_BelowPoverty = poverty_male,
+                                                                                              Total_Females_BelowPoverty = poverty_female) %>% 
+  mutate(percent_pov = (Total_Population_BelowPoverty*100)/sum(Total_Population_BelowPoverty), 
+         percent_male = (Total_Males_BelowPoverty*100)/sum(Total_Males_BelowPoverty),
+         percent_female = (Total_Females_BelowPoverty*100)/sum(Total_Females_BelowPoverty)) %>% 
+  select(NAME, Age_Category, Total_Population_BelowPoverty, percent_pov,
+         Total_Males_BelowPoverty, percent_male, 
+         Total_Females_BelowPoverty, percent_female)
+
+rm(IL_poverty_2019_census, IL_poverty_total,IL_poverty_male, IL_poverty_female)
+
+#New York
+NY_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "NY",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "New York city, New York") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+NY_poverty_female <- NY_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+NY_poverty_male <- NY_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+NY_poverty_total <- NY_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "New York city, New York") 
+NY_poverty_2019 <-
+  bind_cols(NY_poverty_total, NY_poverty_male, NY_poverty_female) %>% select(
+    NAME,
+    Age_Category = age_cat...1,
+    Total_Population_BelowPoverty = poverty_total,
+    Total_Males_BelowPoverty = poverty_male,
+    Total_Females_BelowPoverty = poverty_female
+  ) %>%
+  mutate(
+    percent_pov = (Total_Population_BelowPoverty * 100) / sum(Total_Population_BelowPoverty),
+    percent_male = (Total_Males_BelowPoverty * 100) / sum(Total_Males_BelowPoverty),
+    percent_female = (Total_Females_BelowPoverty * 100) / sum(Total_Females_BelowPoverty)
+  ) %>%
+  select(
+    NAME,
+    Age_Category,
+    Total_Population_BelowPoverty,
+    percent_pov,
+    Total_Males_BelowPoverty,
+    percent_male,
+    Total_Females_BelowPoverty,
+    percent_female
+  )
+rm(NY_poverty_2019_census, NY_poverty_total,NY_poverty_male, NY_poverty_female)
+
+#San Francisco
+CA_poverty_2019_census<-
+  get_acs(
+    geography = "place",
+    state = "CA",
+    table = "B17001",
+    year = 2019,
+    survey = "acs5",
+    output = "tidy",
+    cache_table = TRUE
+  )%>% filter(NAME == "San Francisco city, California") %>% 
+  mutate(variable = str_replace(variable, "B17001_0", "")) %>% 
+  filter(!variable %in% c("01", "02", "03", "17", "31", "32", "33", "34", "35", "36", "37", "38", "39", "40", 
+                          "41", "42", "43", "44", "45", "46", "47", "48", "49", "50",
+                          "51", "52", "53", "54", "55", "56", "57", "58", "59"))%>% 
+  mutate(gender = case_when(
+    variable == "03" ~ "Male", 
+    variable == "04" ~ "Male", 
+    variable == "05" ~ "Male", 
+    variable == "06" ~ "Male", 
+    variable == "07" ~ "Male", 
+    variable == "08" ~ "Male",
+    variable == "09" ~ "Male", 
+    variable == "10" ~ "Male", 
+    variable == "11" ~ "Male", 
+    variable == "12" ~ "Male", 
+    variable == "13" ~ "Male", 
+    variable == "14" ~ "Male", 
+    variable == "15" ~ "Male", 
+    variable == "16" ~ "Male", 
+    variable == "17" ~ "Female",
+    variable == "18" ~ "Female",
+    variable == "19" ~ "Female",
+    variable == "20" ~ "Female",
+    variable == "21" ~ "Female",
+    variable == "22" ~ "Female",
+    variable == "23" ~ "Female",
+    variable == "24" ~ "Female",
+    variable == "25" ~ "Female",
+    variable == "26" ~ "Female",
+    variable == "27" ~ "Female",
+    variable == "28" ~ "Female",
+    variable == "29" ~ "Female",
+    variable == "30" ~ "Female",
+  )) %>% mutate(age_cat = case_when(
+    variable == "04" ~ "Below 18", 
+    variable == "05" ~ "Below 18", 
+    variable == "06" ~ "Below 18",
+    variable == "07" ~ "Below 18",
+    variable == "08" ~ "Below 18",
+    variable == "09" ~ "Below 18", 
+    variable == "18" ~ "Below 18", 
+    variable == "19" ~ "Below 18", 
+    variable == "20" ~ "Below 18",
+    variable == "21" ~ "Below 18",
+    variable == "22" ~ "Below 18",
+    variable == "23" ~ "Below 18", 
+    variable == "10" ~ "18 to 44",
+    variable == "11" ~ "18 to 44",
+    variable == "12" ~ "18 to 44",
+    variable == "24" ~ "18 to 44",
+    variable == "25" ~ "18 to 44",
+    variable == "26" ~ "18 to 44",
+    variable == "13" ~ "45 to 64",
+    variable == "14" ~ "45 to 64",
+    variable == "27" ~ "45 to 64",
+    variable == "28" ~ "45 to 64",
+    variable == "15" ~ "65 and Above",
+    variable == "16" ~ "65 and Above",
+    variable == "29" ~ "65 and Above",
+    variable == "30" ~ "65 and Above",
+  )) 
+
+CA_poverty_female <- CA_poverty_2019_census %>% filter(gender == "Female") %>% group_by(age_cat) %>% 
+  summarise(poverty_female = sum(estimate))
+CA_poverty_male <- CA_poverty_2019_census %>% filter(gender == "Male") %>% group_by(age_cat) %>% 
+  summarise(poverty_male = sum(estimate))
+CA_poverty_total <- CA_poverty_2019_census%>% group_by(age_cat) %>% 
+  summarise(poverty_total=sum(estimate)) %>% 
+  mutate(NAME = "San Francisco, California") 
+CA_poverty_2019 <-
+  bind_cols(CA_poverty_total, CA_poverty_male, CA_poverty_female) %>% select(
+    NAME,
+    Age_Category = age_cat...1,
+    Total_Population_BelowPoverty = poverty_total,
+    Total_Males_BelowPoverty = poverty_male,
+    Total_Females_BelowPoverty = poverty_female
+  ) %>%
+  mutate(NAME = "San Francisco city, California",
+    percent_pov = (Total_Population_BelowPoverty * 100) / sum(Total_Population_BelowPoverty),
+    percent_male = (Total_Males_BelowPoverty * 100) / sum(Total_Males_BelowPoverty),
+    percent_female = (Total_Females_BelowPoverty * 100) / sum(Total_Females_BelowPoverty)
+  ) %>%
+  select(
+    NAME,
+    Age_Category,
+    Total_Population_BelowPoverty,
+    percent_pov,
+    Total_Males_BelowPoverty,
+    percent_male,
+    Total_Females_BelowPoverty,
+    percent_female
+  )
+rm(CA_poverty_2019_census, CA_poverty_total,CA_poverty_male, CA_poverty_female)
+
+
+#Together
+Poverty_Comparison <- bind_rows(IL_poverty_2019,NY_poverty_2019,CA_poverty_2019)
+total_pop <- Race_Comparison %>% select(NAME, pop_tot)
+Poverty_Comparison <- left_join(Poverty_Comparison, total_pop)
+rm(IL_poverty_2019,NY_poverty_2019,CA_poverty_2019)
+```
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% group_by(NAME) %>% summarise(Total_Population_BelowPoverty = sum(Total_Population_BelowPoverty), pop_tot = mean(pop_tot))%>% mutate(Percentage_poverty = (Total_Population_BelowPoverty*100)/pop_tot)%>%kbl(caption = "Poverty across Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+  
+  
+```
+The highest rate of poverty is seen in the city of Chicago. A very similar rate of poverty is seen in New York city. Both these areas house the largest populations of blacks and Latinos, who earn the least across different racial categories. In case of San Francisco, the poverty rate is lower, however the incomes are much higher in comparison and so are the rents. In the next section we look at rent burdens to portray a clear picture of how income is related to housing cost burden across the cities.  
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Population_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Poverty Across 3 Major Cities in the US, 2019")
+
+```
+The graph shows that although the percentage of poor population across the cities is comparable, there are wide differences between age-groups of poor persons across the cities. This has important ramifications for the Covid-19 pandemic since vulnerability depends upon age. The different age compositions within poverty touch upon an important area of their intersectionality – thereby showing that low income SDSS for different cities need to pay heed to the differential age compositions of poverty across the cities.  
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% filter(Age_Category == "Below 18") %>% select(NAME, Total_Population_BelowPoverty, percent_pov) %>%  kbl(caption = "Poverty across for Persons Below 18 in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+In case of Chicago and New York the proportion of poor persons below the age of 18 are substantial. This data contributes towards the archetype formation for the two cities. However in case of San Francisco, this age group does not significantly contribute towards the creation of an archetype for SDSS. 
+
+```{r,echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% filter(Age_Category == "18 to 44") %>% select(NAME, Total_Population_BelowPoverty, percent_pov) %>%  kbl(caption = "Poverty of Persons between 18-44 years of age in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+Across all the cities, the highest proportion of poor/low-income households are present within the age bracket of 18-44. The range of persons belonging to this category are proportional across all the cities and do not show a significant deviation from one another. Therefore, this category is of general importance across all cities. 
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% filter(Age_Category == "45 to 64") %>% select(NAME, Total_Population_BelowPoverty, percent_pov) %>%  kbl(caption = "Poverty of Persons between 45-64 years of age in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The incidence of poverty among persons greater than 45 years of age is lesser than for those lesser than 45 years of age. The table shows a comparable distribution of this category of poor persons across Chicago and New York, but 5% higher in case of San Francisco. This can have some significance for understanding unique groups of vulnerability in San Francisco, while also contributing to the generation of an archetype. 
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% filter(Age_Category == "65 and Above") %>% select(NAME, Total_Population_BelowPoverty, percent_pov) %>%  kbl(caption = "Poverty of Persons for ages 65 and above in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The highest proportion of poor persons belonging to age 65 and above are found in San Francisco. This represents a very important characteristic for archetype creation because. In case of Chicago and New York, the values are more of less proportional and do not represent a substantial contribution to the overall character of housing vulnerability in the city. 
+
+### 2.6.1 Poverty, Age and Sex
+
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% group_by(NAME) %>% summarise(pop_tot = sum(Total_Population_BelowPoverty), Total_Males_BelowPoverty = sum(Total_Males_BelowPoverty), Total_Females_BelowPoverty = sum(Total_Females_BelowPoverty)) %>% mutate(Percent_MalePoverty = (Total_Males_BelowPoverty*100)/pop_tot,Percent_FemalePoverty = (Total_Females_BelowPoverty*100)/pop_tot ) %>% select(NAME, Total_Males_BelowPoverty, Percent_MalePoverty, Total_Females_BelowPoverty, Percent_FemalePoverty) %>%  kbl(caption = "Poverty and Sex in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The table above shows that there exists a gender disparity when it comes to poverty – there is a greater concentration of poverty across women in all major cities. However, the gap is the largest in case of New York City which also houses the largest population of all 3 cities. The gap is least in case of San Francisco, where overall incomes are also greater. Both New York and Chicago show comparable levels of disparity across gender and poverty. 
+
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Males_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Male Poverty Across 3 Major Cities in the US, 2019")
+
+```
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% select(NAME, Age_Category, Total_Males_BelowPoverty, percent_male) %>%  kbl(caption = "Poverty of Males in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+The greatest percentage of poverty in males is found below 18 and between 18-44 years of age in Chicago. A similar conclusion can be drawn for New York city as well. However, in case of San Francisco, the poor males are concentrated in the age categories between 18 to 64 years of age. The age group above 45 years is of significance here. 
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Poverty_Comparison %>% ggplot(aes(y=Total_Females_BelowPoverty, x=NAME, fill = Age_Category))+geom_col()+theme_minimal()+labs(title = "Female Poverty Across 3 Major Cities in the US, 2019")
+
+```
+```{r, echo=FALSE, message=FALSE}
+#Table
+Poverty_Comparison %>% select(NAME, , Age_Category, Total_Females_BelowPoverty, percent_female) %>%  kbl(caption = "Poverty of ales in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+The percentage of poor females below 18 years of age is higher than the percentage of poor males in the same category. This shows that poor young females represent a greater number of vulnerable persons across all the three cities compared with poor young males. Similarly, the poor women above the age of 64 are substantially greater than poor males above the age group of 64. Poor young females are most numerically preponderant in case of New York and Chicago, whereas those 65 and above are highest in case of San Francisco. This contributes to the design of archetype for all three cities. 
+
+## 2.7.Housing Tenure (Focus Area: Renter Households)
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+## Housing Tenure
+# Chicago
+IL_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+IL_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+IL_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+IL_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+IL_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+IL_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+IL_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+IL_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "Chicago city, Illinois") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+IL_tenure_2019 <- bind_cols(IL_tenure_2019_total,
+                            IL_tenure_2019_white, 
+                            IL_tenure_2019_black, 
+                            IL_tenure_2019_Latino, 
+                            IL_tenure_2019_Asian, 
+                            IL_tenure_2019_AIAN, 
+                            IL_tenure_2019_NHPI,
+                            IL_tenure_2019_other)
+rm(IL_tenure_2019_total,
+   IL_tenure_2019_white, 
+   IL_tenure_2019_black, 
+   IL_tenure_2019_Latino, 
+   IL_tenure_2019_Asian, 
+   IL_tenure_2019_AIAN, 
+   IL_tenure_2019_NHPI,
+   IL_tenure_2019_other)
+
+# New York
+NY_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+NY_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+NY_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+NY_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+NY_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+NY_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+NY_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+NY_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "New York city, New York") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+NY_tenure_2019 <- bind_cols(NY_tenure_2019_total,
+                            NY_tenure_2019_white, 
+                            NY_tenure_2019_black, 
+                            NY_tenure_2019_Latino, 
+                            NY_tenure_2019_Asian, 
+                            NY_tenure_2019_AIAN, 
+                            NY_tenure_2019_NHPI,
+                            NY_tenure_2019_other)
+rm(NY_tenure_2019_total,
+   NY_tenure_2019_white, 
+   NY_tenure_2019_black, 
+   NY_tenure_2019_Latino, 
+   NY_tenure_2019_Asian, 
+   NY_tenure_2019_AIAN, 
+   NY_tenure_2019_NHPI,
+   NY_tenure_2019_other)
+
+# San Francisco
+CA_tenure_2019_total <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(NAME, tenure_tot =B25003_001E, rent_tot = B25003_003E) %>% 
+  mutate(percent_rent = (rent_tot*100)/tenure_tot )
+
+CA_tenure_2019_white <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003A",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_white =B25003A_001E, rent_tot_white = B25003A_003E) %>% 
+  mutate(percent_rent_white = (rent_tot_white*100)/tenure_tot_white )
+
+CA_tenure_2019_black <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003B",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_black =B25003B_001E, rent_tot_black = B25003B_003E) %>% 
+  mutate(percent_rent_black = (rent_tot_black*100)/tenure_tot_black )
+
+CA_tenure_2019_AIAN <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003C",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_AIAN =B25003C_001E, rent_tot_AIAN = B25003C_003E) %>% 
+  mutate(percent_rent_AIAN = (rent_tot_AIAN*100)/tenure_tot_AIAN )
+
+CA_tenure_2019_Asian <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003D",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_Asian =B25003D_001E, rent_tot_Asian = B25003D_003E) %>% 
+  mutate(percent_rent_Asian = (rent_tot_Asian*100)/tenure_tot_Asian )
+
+CA_tenure_2019_NHPI <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003E",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_NHPI =B25003E_001E, rent_tot_NHPI = B25003E_003E) %>% 
+  mutate(percent_rent_NHPI = (rent_tot_NHPI*100)/tenure_tot_NHPI )
+
+CA_tenure_2019_other <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003F",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_other =B25003F_001E, rent_tot_other = B25003F_003E) %>% 
+  mutate(percent_rent_other = (rent_tot_other*100)/tenure_tot_other )
+
+CA_tenure_2019_Latino <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "B25003I",
+  year = 2019,
+  survey = "acs5",
+  output = "wide"
+) %>%
+  filter(NAME == "San Francisco city, California") %>% 
+  select(tenure_tot_Latino =B25003I_001E, rent_tot_Latino = B25003I_003E) %>% 
+  mutate(percent_rent_Latino = (rent_tot_Latino*100)/tenure_tot_Latino )
+
+CA_tenure_2019 <- bind_cols(CA_tenure_2019_total,
+                            CA_tenure_2019_white, 
+                            CA_tenure_2019_black, 
+                            CA_tenure_2019_Latino, 
+                            CA_tenure_2019_Asian, 
+                            CA_tenure_2019_AIAN, 
+                            CA_tenure_2019_NHPI,
+                            CA_tenure_2019_other)
+rm(CA_tenure_2019_total,
+   CA_tenure_2019_white, 
+   CA_tenure_2019_black, 
+   CA_tenure_2019_Latino, 
+   CA_tenure_2019_Asian, 
+   CA_tenure_2019_AIAN, 
+   CA_tenure_2019_NHPI,
+   CA_tenure_2019_other)
+
+# Together
+Tenure_Rented_Comparison <- bind_rows(IL_tenure_2019,NY_tenure_2019,CA_tenure_2019)
+rm(IL_tenure_2019,NY_tenure_2019,CA_tenure_2019)
+```
+
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Tenure_Rented_Comparison %>% ggplot(aes(y=rent_tot, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(percent_rent,0)), vjust = -0.5)+theme_minimal()+labs(title = "HHs living in Rental Housing (with %), 2019")
+
+```
+```{r, echo=FALSE, message=FALSE}
+#Table
+Tenure_Rented_Comparison %>% select(NAME, tenure_tot, rent_tot, percent_rent) %>%  kbl(caption = "Tenure Details of Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+In case of all three cities, more than half of the households live in rental housing. This has important ramifications for policy, since renter households represent vulnerability during the Covid-19 pandemic, owing to job losses and inability to pay rent. Renter households therefor face housing instability and the possible threat of evictions due to Covid-19. The problem is most acute in case of New York City (which incidentally also faces a very high chance of evictions). It is closely followed by San Francisco and Chicago, showing that the scale of housing vulnerability is comparable across all three cities. 
+
+### 2.7.1. Housing Tenure and Race
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+Tenure_Rented_Comparison %>% mutate(rent_tot_nonwhite = rent_tot - rent_tot_white, percent_rent_nonwhite = (rent_tot_nonwhite*100)/rent_tot) %>% ggplot(aes(y=rent_tot_nonwhite, x=NAME, fill = "yellow"))+geom_col()+theme_minimal()+labs(title = "Non-White HHs living in Rental Housing (with %), 2019")
+
+```
+```{r, echo = FALSE, message=FALSE}
+#Table
+Tenure_Rented_Comparison %>% select(NAME, percent_rent_white, percent_rent_black, percent_rent_Latino, percent_rent_Asian, percent_rent_NHPI, percent_rent_NHPI) %>%  kbl(caption = "Tenure Details of Racial Categories in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+
+The population of non-white renter households is greatest is case of New York City, followed by Chicago and San Francisco. Across all the cities, approximately half of the white population resides in rental housing. The proportion of both white and non-white renters is highest in case of San Francisco and least in case of Chicago. 
+
+Going by race, San Francisco has the highest proportion of white and black households who are living in rental arrangements. In case of Chicago, the percentage of blacks and Latinos who live in rental housing are substantially high. In case of New York, the highest proportion of renters are found in the Latino community, followed by NHPI, Blacks, whites and Asians. 
+
+### 2.7.2 Housing Cost Burden with respect to Income (All Occupied Households)
+
+```{r,include = FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+#Code
+## Housing Cost Burden
+# Chicago
+IL_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "IL",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "Chicago city, Illinois") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "Chicago city, Illinois",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+# New York
+NY_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "NY",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "New York city, New York") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "New York city, New York",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+# San Francisco
+CA_HousingCostBurden_2019 <- get_acs(
+  geography = "place",
+  state = "CA",
+  table = "S2503",
+  year = 2019,
+  survey = "acs5",
+  output = "wide", cache=TRUE) %>% filter(NAME == "San Francisco city, California") %>% 
+  select(HH_total=S2503_C01_001E,
+         HH_Lessthan_20000 = S2503_C01_025E,
+         HHBurdened_Lessthan_20000 = S2503_C01_028E,
+         HH_20000_to_34999 = S2503_C01_029E,
+         HHBurdened_20000_to_34999 = S2503_C01_032E,
+         HH_35000_to_49999 = S2503_C01_033E,
+         HHBurdened_35000_to_49999 = S2503_C01_036E,
+         HH_50000_to_74999 = S2503_C01_037E,
+         HHBurdened_50000_to_74999 = S2503_C01_040E,
+         HH_75000_andAbove = S2503_C01_041E,
+         HHBurdened_75000_andAbove = S2503_C01_044E,
+         HH_Zero_or_Negative_Income = S2503_C01_045E
+  ) %>% mutate(NAME = "San Francisco city, California",
+               Percent_Lessthan_20000 = (HH_Lessthan_20000*100)/HH_total,
+               PercentBurdened_Lessthan_20000 = (HHBurdened_Lessthan_20000*100)/HH_Lessthan_20000 ,
+               Percent_20000_to_34999 = (HH_20000_to_34999*100)/HH_total,
+               PercentBurdened_20000_to_34999 = (HHBurdened_20000_to_34999*100)/HH_20000_to_34999,
+               Percent_35000_to_49999 = (HH_35000_to_49999*100)/HH_total,
+               PercentBurdened_35000_to_49999 = (HHBurdened_35000_to_49999*100)/HH_35000_to_49999,
+               Percent_50000_to_74999 = (HH_50000_to_74999*100)/HH_total,
+               PercentBurdened_50000_to_74999 = (HHBurdened_50000_to_74999*100)/HH_50000_to_74999,
+               Percent_75000_andAbove = (HHBurdened_75000_andAbove*100)/HH_total,
+               PercentBurdened__75000_andAbove = (HHBurdened_75000_andAbove)/HH_75000_andAbove,
+               Percent_Zero_or_Negative_Income = (HH_Zero_or_Negative_Income*100)/HH_total) %>% select(
+                 NAME,
+                 HH_total,
+                 HH_Lessthan_20000,
+                 Percent_Lessthan_20000,
+                 HHBurdened_Lessthan_20000,
+                 PercentBurdened_Lessthan_20000,
+                 HH_20000_to_34999,
+                 Percent_20000_to_34999,
+                 HHBurdened_20000_to_34999,
+                 PercentBurdened_20000_to_34999,
+                 HH_35000_to_49999,
+                 Percent_35000_to_49999,
+                 HHBurdened_35000_to_49999,
+                 PercentBurdened_35000_to_49999,
+                 HH_50000_to_74999,
+                 Percent_50000_to_74999,
+                 HHBurdened_50000_to_74999,
+                 PercentBurdened_50000_to_74999,
+                 HH_Zero_or_Negative_Income,
+                 Percent_Zero_or_Negative_Income
+               )
+
+# Together
+OverallHousingCostBurden_Comparison <- bind_rows(IL_HousingCostBurden_2019,NY_HousingCostBurden_2019,CA_HousingCostBurden_2019)
+rm(IL_HousingCostBurden_2019,NY_HousingCostBurden_2019,CA_HousingCostBurden_2019)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_Lessthan_20000, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_Lessthan_20000,0)), vjust = -0.5)+theme_minimal()+labs(title = "Cost Burdened Households < USD 20,000 Per Year (with %), 2019")
+```
+
+```{r, echo=FALSE, message = FALSE }
+# Table
+OverallHousingCostBurden_Comparison %>% select(NAME, HH_Lessthan_20000, Percent_Lessthan_20000, HHBurdened_Lessthan_20000, PercentBurdened_Lessthan_20000) %>%  kbl(caption = "Cost Burdened Households  earning < USD 20,000 Per Year (with %) in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+ Although populations earning less than 20,000 USD per year are a minority, they are almost invariably burdened with housing costs (mortgage, rent, etc.). The lowest number of households earning in this category is found in San Francisco. They are 0.5 times greater in both Chicago and New York City and heavily burdened with housing costs. Since more than 80% of all households earning less than 20,000 USD are burdened across all 3 cities, they represent a category of general concern across all cities.
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_20000_to_34999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_20000_to_34999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households (USD 20,000 - 34999), 2019")
+```
+
+```{r, echo=FALSE, message = FALSE }
+# Table
+OverallHousingCostBurden_Comparison %>% select(NAME, HH_20000_to_34999, Percent_20000_to_34999, HHBurdened_20000_to_34999, PercentBurdened_20000_to_34999) %>%  kbl(caption = "Cost Burdened Households  earning between 20,000 and 34, 999 Per Year (with %) in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The number of cost burdened households in this category are highest in New York City. Chicago has 1/3 the number of rent burdened households in this category as does New York, and San Francisco only has 1/15 times the number. However, the percentage of cost burdened households belonging to this category is lowest in San Francisco is above 70%. Therefore, this category can be seen as a general concern across all three cities. 
+
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_35000_to_49999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_35000_to_49999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households (USD 35,000 - 49,999), 2019")
+```
+
+```{r, echo=FALSE, message = FALSE }
+# Table
+OverallHousingCostBurden_Comparison %>% select(NAME, HH_35000_to_49999, Percent_35000_to_49999, HHBurdened_35000_to_49999, PercentBurdened_35000_to_49999) %>%  kbl(caption = "Cost Burdened Households  earning between USD 35,000 - 49,999 Per Year (with %) in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The number of cost burned households belonging to this category differs widely across the three cities. However, compared with the categories discussed above, it represents one of the least number of households, yet. Looking at the percentages, New York City continues to be heavily rent burdened, covering more than 70% of the population belonging to this category, whereas both Chicago and San Francisco fall below that range. However, since majority of the population belonging to this category (50% and above) are cost burdened, this is a topic of general concern across all three cities. 
+
+```{r, echo=FALSE, message=FALSE}
+#Graphs
+OverallHousingCostBurden_Comparison %>% ggplot(aes(y=HHBurdened_50000_to_74999, x=NAME, fill = "yellow"))+geom_col()+geom_text(aes(label = round(PercentBurdened_50000_to_74999,0)), vjust = -0.5)+theme_minimal()+labs(title = "Housing Cost Burdened Households earning between USD 50,000 and 74,999, 2019")
+```
+
+```{r, echo=FALSE, message = FALSE }
+# Table
+OverallHousingCostBurden_Comparison %>% select(NAME, HH_50000_to_74999, Percent_50000_to_74999, HHBurdened_50000_to_74999, PercentBurdened_50000_to_74999) %>%  kbl(caption = "Cost Burdened Households  earning between USD 50,000 - 74,999 Per Year (with %) in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+This represents an area of lesser cost burden and greater incomes. In case of both New York and Chicago, less than 50% of the households belonging to this range are cost burdened. Therefore, this does not represent a general state of vulnerability across all the cities. However, in case of San Francisco, most of the households continue to be cost burdened, despite higher earnings. This shows a unique intersectional position of San Francisco across the three cities and is therefore considered to be an area of archetypal significance for San Francisco. 
+
+# 3. Housing Segregation as Spatial Vulnerability
+
+The Oxford Dictionary describes segregation as “the action or state of setting someone or something apart from other people – the enforced separation of different racial groups in a country, community or establishment”. In the United States, and invariably across its larger cities, segregation manifests in the form of racial discrimination and housing disparity, concentrating poverty, vulnerability and racial minorities in parts of the city where access of infrastructure is highly contested. Such spatial bias has historic roots forcing African American, Latinos and other minority communities to be differentiated based on residential opportunity. During Covid-19, it has been confirmed that populations residing in areas of concentrated disadvantage (residential segregation based on income, race, etc.) have a higher percentage of Covid-19 related deaths (10% increase in population increases mortality ratio by 1.14%) (Khanijahani & Tomassoni, 2021). It therefore represents an area of spatial vulnerability, that was unconsidered in earlier normative models of Housing Relocation SDSS. 
+
+## 3.1 Racial Segregation in Chicago
+```{r,include= FALSE, message=FALSE}
+#Chicago
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "Illinois",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+il_trt <- tracts(state="IL", class="sf")
+il_trt <- left_join(il_trt, acs_data, by="GEOID")
+il_trt <- il_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+chi_boundary<-places(state="Illinois", class="sf") %>% filter(NAME == "Chicago")
+chi_trt<-il_trt %>% filter(st_contains(chi_boundary,il_trt, sparse = FALSE))
+
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in Chicago, 2019")+theme_classic()
+
+
+```
+
+From the above map it can be observed that the greatest percentage of white population reside in the Northern and Central Chicago. The map shows two large chunks of tracts, roughly in the central parts of Chicago which have the least percentages of white population. From the pattern of residential distribution of white households in the city, a pattern of residential segregation is visible – white households are clustered in certain parts of the city, whereas non-whites are clustered in the other parts of the city. 
+
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in Chicago, 2019")+theme_classic()
+```
+Comparing this diagram with the one above, Central and South-Central parts of the city are inhabited by most non-white households. This is in direct contrast with the parts of the city that have a maximum number of non-white households. Patterns of residential segregation can be further explored through the graphs shown below. 
+
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+
+ascending_chi_trt <- chi_trt %>% arrange(PWhite) %>% mutate(NAME=factor(NAME, levels = NAME))%>% st_drop_geometry()
+ascending_chi_trt %>% ggplot()+geom_col(aes(x=NAME, y=PWhite))+theme(axis.title.x=element_blank(), axis.text.x=element_blank())+ 
+  labs(title = "White Population in Chicago as per Tracts, 2019")
+
+```
+The graph shown below is designed in ascending order of percentage white population. All tracts in Chicago City are arranged in this order and used for graphs shown below. This is done in order to see, if Chicago follows a pattern of residential segregation, where one group of residents are excluded from neighborhoods, or choose not to reside in neighborhoods where a certain other group (on the basis of race, income, etc.) reside. In case of Chicago, the highest number of neighborhoods have a majority white population. 
+```{r,echo = FALSE, message=FALSE}
+ggplot(data= ascending_chi_trt)+geom_col(aes(x=NAME, y=PBlack))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "Black Population in Chicago as per Tracts, 2019")
+```
+The graph shown here is constructed using the same arrangement of tracts – ascending order of census tracts based on percentage white population. It is clear through this analysis that majority white neighborhoods exclude black households from them. Black households are concentrated across neighborhoods/census tracts where white population is the least. The graph is a close negative of the graph shown above, showing how blacks and white do not reside in much residential proximity from one another. 
+
+```{r,echo = FALSE, message=FALSE}
+ggplot(data= ascending_chi_trt)+geom_col(aes(x=NAME, y=PLatino))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "Latino Population in Chicago as per Tracts, 2019")
+```
+In case of percentage of Latino Populations, their residential locations resemble more closely white whites than with blacks. A much lower percentage of Latinos is found in areas where there is a majority black population. Therefore, it can be concluded that the impacts of racial segregation are more acute for the black community in Chicago, than they are for the Latino population. 
+
+```{r,echo = FALSE, message=FALSE}
+ggplot(data= ascending_chi_trt)+geom_col(aes(x=NAME, y=PAsian))+theme(axis.title.x=element_blank(),
+                                                            axis.text.x=element_blank())+ 
+  labs(title = "Asian Population in Chicago as per Tracts, 2019")
+```
+In case of Asians, a similar conclusion can be drawn – they are more likely to reside in places where whites/Latinos reside, instead of where African Americans do. Although the dispersion of Asians is uniform across all tracts, they seem to be higher in case of tracts with a majority white population. This reconfirms the vulnerability of black populations and the nature of their segregation and isolation from other racial groups across the city. 
+
+## 3.2 Racial Segregation in New York City
+```{r,include=FALSE, message=FALSE}
+#New York City
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "New York",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ny_trt <- tracts(state="NY", class="sf")
+ny_trt <- left_join(ny_trt, acs_data, by="GEOID")
+ny_trt <- ny_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+nyc_boundary<-places(state="New York", class="sf") %>% filter(NAME == "New York")
+nyc_trt<-ny_trt %>% filter(st_contains(nyc_boundary,ny_trt, sparse = FALSE))
+
+
+```
+
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in New York City, 2019")+theme_classic()
+```
+The greatest percentage of white population is found in Manhattan, parts of Brooklyn and in Staten Island. There is a visible disparity between the clustering of white households in the city and that of non-white populations as well. As understood from these famous neighborhoods within New York City, it is also possible, that these areas represent the hottest property markets within the city, transforming housing into a lucrative domain for financial opportunity within the city, and excluding racial minorities from affording a place in these neighborhoods. 
+
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in New York City, 2019")+theme_classic()
+```
+In the above diagram, Brooklyn, Bronx and Queens house the greatest number of non-whites. This is in direct contrast with the areas in which the number of white households dominate. Brooklyn represents the only borough which houses both a substantial proportion of both white and non-white populations. However, even within the same borough, there are specific areas where the two groups are located, showing that even within the same borough residential segregation is taking place. Moving on to the tract level will help us get a better picture of how segregation works at the neighborhood level. 
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+ascending_nyc_trt <- nyc_trt %>% filter(!is.na(PWhite)) %>% arrange(PWhite) %>% mutate(NAME=factor(NAME, levels = rev(unique(NAME))))%>% st_drop_geometry()
+ascending_nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) + ylim(0,1)+theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in New York City as per Tracts, 2019")
+
+```
+Some of the data in this section could not be sorted properly leading to several distortions on the right-hand side of the data – evidencing a certain type of noise present in the data. However, overlooking that, it is clear from the above graphic (tracts arranged in ascending order of percentage of white population). It shows a pattern, like that seen in Chicago tracts. There are parts of the city which have a high population of whites and it diminishes across the range steeply. 
+```{r,echo = FALSE, message=FALSE}
+ascending_nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PBlack)) +ylim(0,1)+theme(axis.title.x=element_blank(),
+                                                                                    axis.text.x=element_blank())+ 
+  labs(title = "Black Population in New York City as per Tracts, 2019")
+```
+This graph is a close negative of the graph shown above, evidencing a clear pattern of segregation against African American Population in the city of New York. Eliminating the noise, it can be clearly understood that areas where there is a greater proportion of white population, black populations are significantly low, and vice versa. Therefore, segregation against African Americans is a major concern in the city of New York. 
+
+```{r,echo = FALSE, message=FALSE}
+ascending_nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PLatino)) +ylim(0,1)+theme(axis.title.x=element_blank(),
+                                                                                    axis.text.x=element_blank())+ 
+  labs(title = "Latino Population in New York City as per Tracts, 2019")
+```
+Although it is difficult to deduce a clear pattern of segregation against Latinos in the city, they tend to inch closer to areas which are inhabited by African Americans in the city, instead of concentrating in areas where the percentage of white households is very large. It can be understood that Latinos concentrate at the middle ground between blacks and whites, exhibiting a preference towards black populations in the city. However, since the ratios of Latino population are substantially less in case of areas where the white population dominates, it can be seen as evidence of some form of racial segregation against Latinos. 
+
+```{r,echo = FALSE, message=FALSE}
+ascending_nyc_trt %>% ggplot() +geom_col(aes(x=NAME, y=PAsian)) +ylim(0,1)+theme(axis.title.x=element_blank(),
+                                                                                    axis.text.x=element_blank())+ 
+  labs(title = "Asian Population in New York City as per Tracts, 2019")
+```
+Asian populations have significantly less concentration compared with other minority groups across all of New York. However, eliminating for the noise that is distorting the graph, it can be understood Asians are evenly distributed across all the blocks, showing a slight preference for areas where the white households do not concentrate. This is because the graph resembles the graph of the black population more than it resembles that of the white population. Evidence of segregation exists, but it is not strong enough to be of archetypal significance at this stage. 
+
+## 3.3 Racial Segregation in San Francisco. 
+
+```{r,include = FALSE, message=FALSE}
+#San Francisco
+#Downloading census data
+B01001_Vars <- c("B01001_001")
+B01001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B01001_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B01001$Pop <- B01001$B01001_001E
+B01001$Pop[B01001$Pop == "NaN"] <- NA
+B01001 <-
+  B01001 %>% filter(!is.na(Pop), na.rm = TRUE) %>% filter(Pop > 0) %>% select(GEOID, Pop)
+
+#Race
+B02001_Vars <- c(
+  "B02001_001",
+  "B02001_002",
+  "B02001_003",
+  "B02001_004",
+  "B02001_005",
+  "B02001_006",
+  "B02001_007",
+  "B02001_008"
+)
+B02001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B02001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B02001$White <- B02001$B02001_002E
+B02001$Black <- B02001$B02001_003E
+B02001$AIAN <- B02001$B02001_004E
+B02001$Asian <- B02001$B02001_005E
+B02001$Nonwhite <- (B02001$B02001_001E - B02001$B02001_002E)
+B02001$PWhite <- B02001$White / B02001$B02001_001E
+B02001$PBlack <- B02001$Black / B02001$B02001_001E
+B02001$PAIAN <- B02001$AIAN / B02001$B02001_001E
+B02001$PAsian <- B02001$Asian / B02001$B02001_001E
+B02001$PNonwhite <- B02001$Nonwhite / B02001$B02001_001E
+B02001$PWhite[B02001$PWhite == "NaN"] <- NA
+B02001$PBlack[B02001$PBlack == "NaN"] <- NA
+B02001$PAIAN[B02001$PAIAN == "NaN"] <- NA
+B02001$PAsian[B02001$Asian == "NaN"] <- NA
+B02001$PNonwhite[B02001$Nonwhite == "NaN"] <- NA
+B02001 <-
+  B02001 %>% select(GEOID,
+                    White,
+                    Black,
+                    AIAN,
+                    Asian,
+                    Nonwhite,
+                    PWhite,
+                    PBlack,
+                    PAIAN,
+                    PAsian,
+                    PNonwhite)
+
+#Ethnicity 
+B03001_Vars <- c("B03001_001", "B03001_003")
+B03001 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B03001_Vars,
+    year = 2019,
+    survey = "acs5",
+    output = "wide"
+  )
+B03001$Latino <- B03001$B03001_003E
+B03001$PLatino <- B03001$Latino / B03001$B03001_001E
+B03001$PLatino[B03001$PLatino == "NaN"] <- NA
+B03001 <- B03001 %>% select(GEOID, Latino, PLatino)
+
+#B19013: Median Household Income 
+B19013_Vars <- c("B19013_001")
+B190193 <-
+  get_acs(
+    geography = "tract",
+    state = "California",
+    variables = B19013_Vars,
+    survey = "acs5",
+    year = 2019,
+    output = "wide"
+  )
+B190193$MHHI <- B190193$B19013_001E
+B190193$MHHI[B190193$MHHI == "NaN"] <- NA
+B190193 <- B190193 %>% select(GEOID, MHHI)
+
+# Join the data together and clean up intermediate data objects.
+acs_data <- left_join(B01001, B02001, by = "GEOID")
+acs_data <- left_join(acs_data, B03001, by = "GEOID")
+acs_data <- left_join(acs_data, B190193, by = "GEOID")
+rm(B01001,B02001, B03001, B190193, B01001_Vars, B02001_Vars, B03001_Vars, B19013_Vars)
+
+#Adding geometry
+
+ca_trt <- tracts(state="CA", class="sf")
+ca_trt <- left_join(ca_trt, acs_data, by="GEOID")
+ca_trt <- ca_trt %>% filter(!is.na(Pop), na.rm=TRUE)
+
+#Changing geometry
+sf_boundary<-places(state="California", class="sf") %>% filter(NAME == "San Francisco")
+sf_trt<-ca_trt %>% filter(st_contains(sf_boundary,ca_trt, sparse = FALSE))
+
+rm(il_trt, ca_trt, ny_trt)
+```
+
+
+```{r,echo = FALSE, message=FALSE}
+#Plotting Segregation
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PWhite, colour = PWhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Whites in San Francisco, 2019")+theme_classic()
+
+```
+The northern parts of San Francisco City house the greatest concentration of whites. As we move from north to south, the proportion of white households decreases, and non-white households increase. Similar to the maps of New York and Chicago, the city has a clear pattern of concentration of whites and non-whites, signalling the possibility of racial segregation.
+```{r,echo = FALSE, message=FALSE}
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = PNonwhite, colour = PNonwhite)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "% of Non-Whites in San Francisco, 2019")+theme_classic()
+```
+As visible in the map shown above, there is a clear gradient of change of racial concentration from north to south in San Francisco. The southern parts of San Francisco are dominated by non-whites, whereas the northern parts are mostly white in racial composition. The graphs below will break down the composition of non-white population and bear evidence to the segregation that is hinted through the maps above. 
+```{r,echo = FALSE, message=FALSE}
+#Graphing Segregation
+ascending_sf_trt <- sf_trt %>% arrange(PWhite) %>% mutate(NAME=factor(NAME, levels = NAME))%>% st_drop_geometry()
+
+ascending_sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PWhite)) +theme(axis.title.x=element_blank(),axis.text.x=element_blank())+ 
+  labs(title = "White Population in San Francisco as per Tracts, 2019")+theme_minimal()
+```
+A much greater proportion of census tracts are dominated by white households in San Francisco, as compared with either New York or Chicago. In the graph shown above, all census tracts in the city are arranged in ascending order of percentage population of whites. It can be seen here that the proportion of census tracts where white population is less than 25% is the least and a majority of the census tracts have a proportion of white population that is above 50%. This shows that the city of San Francisco might be highly racially segregated. 
+```{r,echo = FALSE, message=FALSE}
+ascending_sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PAsian)) +theme(axis.title.x=element_blank(),
+                                                               axis.text.x=element_blank())+ 
+  labs(title = "Asian Population in San Francisco as per Tracts, 2019")+theme_minimal()
+
+```
+Asians represent the largest minority group residing in San Francisco. As the graph suggests, they mostly reside in census tracts where the population of whites is the least. This shows a clear pattern of segregation across the city, where Asians are pushed to live in neighborhoods where the white population does not reside in good numbers. This is where San Francisco shows a unique intersectional perspective, in that instead of African Americans or Latinos, Asians, who largely participate in the tech Industry are discriminated upon and segregated residentially. In case of San Francisco, they represent a high level of racial vulnerability owing to Covid-19. 
+```{r,echo = FALSE, message=FALSE}
+ascending_sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PBlack)) +theme(axis.title.x=element_blank(),
+                                                               axis.text.x=element_blank())+ 
+  labs(title = "Black Population in San Francisco as per Tracts, 2019")+theme_minimal()
+
+```
+Although the percentage of blacks residing across most census tracts in San Francisco are much lesser than Chicago or New York city, they seem to demonstrate a similar pattern. Blacks or African American households tend to concentrate on places where the white populations are significantly lower. This shows a pattern of residential segregation and spatial vulnerability that is a general concern across all the three cities. 
+```{r,echo = FALSE, message=FALSE}
+ascending_sf_trt %>% ggplot() +geom_col(aes(x=NAME, y=PLatino)) +theme(axis.title.x=element_blank(),
+                                                               axis.text.x=element_blank())+ 
+  labs(title = "Latino Population in San Francisco as per Tracts, 2019")+theme_minimal()
+
+```
+In case of Latinos, the population is more or less distributed across he census tracts where white populations dominate. However, on closer observation it can be noted that the highest number of Latino households are found in the left half of the graph – where the preponderance of white households is the least. Therefore, in case of Latino households there is a possibility of residential segregation, however, it is not as apparent or archetypal as segregation against Asians and blacks in the city of San Francisco. 
+
+## 3.4 Measuring Racial Segregation
+
+The racial segregation that was made visible through the above graphs and maps will be quantified in this section through measurements such as dissimilarity, interaction and isolation. they are elaborated below. 
+
+### 3.4.1 Dissimilarity
+
+*Dissimilarity* is a common measure of *evenness* between two populations - dissimilarity measures the distribution of a minority population within a majority population. Conceptually, dissimilarity measures the proportion of that minority or subgroup population that would need to move in order to be equally distributed with the majority population. Dissimilarity is calculated as follows:
+
+$D = .5*\sum_i |\frac{b_i}{B}-\frac{w_i}{W}|$
+
+where
+
+$b_i$ is the number of non-white in tract *i*
+
+$B$ is the number of non-white for the county
+
+$w_i$ is the number of whites in tract *i*
+
+$W$ is the number of whites for the city
+
+```{r,echo = FALSE, message=FALSE}
+#Majority Minority Dissimilarity in Chicago
+chi_trt <- chi_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+chi_dissimilarity_major_minor_NonWhite<- chi_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#New York City
+nyc_trt <- nyc_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+nyc_dissimilarity_major_minor_NonWhite<- nyc_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#San Francisco
+#Majority Minority Dissimilarity
+sf_trt <- sf_trt %>% mutate(White_co = sum(White), Nonwhite_co = sum(Nonwhite))
+sf_dissimilarity_major_minor_NonWhite<- sf_trt %>% mutate(dissim_nww = abs(Nonwhite / Nonwhite_co - White / White_co)) %>%
+  summarise(dissimilarity_NonWhite_White = 0.5 * sum(dissim_nww))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "Majority-Minority Dissimilarity", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Dissimilarity = dissimilarity_NonWhite_White)
+
+#Together
+Dissimilarity_Comparison <- bind_rows(chi_dissimilarity_major_minor_NonWhite, 
+                             nyc_dissimilarity_major_minor_NonWhite,
+                             sf_dissimilarity_major_minor_NonWhite)
+rm(chi_dissimilarity_major_minor_NonWhite, 
+                             nyc_dissimilarity_major_minor_NonWhite,
+                             sf_dissimilarity_major_minor_NonWhite)
+
+Dissimilarity_Comparison %>% select(NAME, Dissimilarity)%>% kbl(caption = "Dissimilarity between Whites and Non-Whites in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+Looking at the three values, the problem of racial segregation is most acute in case of Chicago. The dissimilarity values for both Chicago and New York City are comparable and therefore represent the need for redistribution of minority groups within the majority population. Mitigating this spatial vulnerability would require minority black and latino populations to relocate outside the concentration areas/neighborhoods of their current population. Since the ddimilarity values for San Francisco are less than 50%, it may not be considered for this pattern of residential recovery. 
+
+### 3.4.2 Interaction
+
+A second common measure of segregation is *interaction* which is a measure of *exposure*. Interaction measures the likelihood of population subgroups interacting with one another based upon their distribution within areal sub units (tracts). For instance, Non-White-White interaction is calculated as follows:
+
+$Interaction = \sum_i\frac{b_i}{B}*\frac{w_i}{t_i}$
+
+Where
+
+$b_i$ is the Non-white population of tract *i*
+
+$B$ is the Non-White population of the city
+
+$w_i$ is the White population of tract *i*
+
+$t_i$ is the total population of tract *i*
+
+```{r,echo = FALSE, message=FALSE}
+#Interaction in Chicago
+chi_interact_NonWhite_white <- chi_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#New York City
+nyc_interact_NonWhite_white <- nyc_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#San Francisco
+sf_interact_NonWhite_white <- sf_trt %>% mutate(interact_nnw = abs(Nonwhite / Nonwhite_co * White / Pop)) %>%
+  summarise(interaction_NonWhite_White = sum(interact_nnw))%>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Interaction", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = interaction_NonWhite_White)
+
+#Together
+Interaction_Comparison <- bind_rows(chi_interact_NonWhite_white,
+                                    nyc_interact_NonWhite_white,
+                                    sf_interact_NonWhite_white)
+rm(chi_interact_NonWhite_white,
+                                    nyc_interact_NonWhite_white,
+                                    sf_interact_NonWhite_white)
+Interaction_Comparison %>% select(NAME, Interaction)%>% kbl(caption = "Interaction between Whites and Non-Whites in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+The interaction between different groups is highest in case of San Francisco. This corroborates the information gained from the dissimilarity analysis. A possible reason for greater interaction is the fact that Asians (minority populations) often work the same white collar jobs as the majority white population does in San Francisco. New York City, which has the second highest rates of dissimilarity shows the lowest interaction between minority sub groups. This is a cause of archetypal significance in case of new York since it also houses a large population of all racial griups and absence of interaction can be deemed as a major category of housing vulnerability during Covid-19. 
+
+### 3.4.3. Isolation
+
+The final measure of racial segregation is *isolation* which is only measured for one group at a time. Isolation measures the likelihood of contact for a subgroup with other subgroup members. It is interpreted similarly to Interaction (as a probability ranging from 0 to 1):
+
+Isolation for Non-Whites
+
+$Isolation = \sum_i\frac{b_i}{B}*\frac{b_i}{t_i}$
+
+Where
+
+$b_i$ is the Non-White population of tract *i*
+
+$B$ is the Non-White population of the city
+
+$t_i$ is the total population of tract *i*
+
+```{r,echo = FALSE, message=FALSE}
+#Isolation in Chicago
+chi_isolation_nw <- chi_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "Chicago") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#New York City
+nyc_isolation_nw <- nyc_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "New York City") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#San Francisco
+sf_isolation_nw <- sf_trt %>% mutate(iso_nw = abs(Nonwhite / Nonwhite_co * Nonwhite / Pop)) %>% 
+  summarise(NonWhite_Isolation = sum(iso_nw)) %>% st_set_geometry(NULL) %>% 
+  mutate(ANALYSIS_TYPE = "White-NonWhite Isolation", NAME = "San Francisco") %>% 
+  select(ANALYSIS_TYPE, NAME, Interaction = NonWhite_Isolation)
+
+#Together
+Isolation_Comparison <- bind_rows(chi_isolation_nw,
+                                  nyc_isolation_nw,
+                                  sf_isolation_nw)
+rm(chi_isolation_nw,nyc_isolation_nw,sf_isolation_nw)
+Isolation_Comparison %>% select(NAME, Isolation=Interaction)%>%  kbl(caption = "Isolation among Non-Whites in Chicago, New York and San Francisco, 2019") %>%
+  kable_classic(full_width = F, html_font = "Cambria")
+```
+Similar to the outcomes of interaction, the greatest values for isolation of racial minorities are discovered in New York, shortly followed by Chicago.The values are substantially high for all the three cities, despite the spike in case of New york city - signalling that it is an area of attention for all the cities.  
+
+## 3.5 Measuring Income Segregation
+
+This section steers away from the most preponderant model of residential segregation - racial segregation, in order to make a case for an intersectional approach to segregation - income and poverty based segregation. This is done through the use of income ratios, which measures the ratio of median household income at the tract level with median household incomes at the city level. It bears resemblance to the analysis of percentage difference of incomes across racial categories. Maps are designed to understand the landscape of income inequality across the city and relate the same with the geography of racial segregation.  
+
+### 3.5.1 Income Segregation in Chicago
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in Chicago
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "Illinois",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "Chicago city, Illinois") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+Chicago_tot_MHHI <- place_median_income$MHHI_tot[1]
+chi_trt <- chi_trt %>% mutate(inc_ratio = MHHI/Chicago_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = chi_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = chi_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in Chicago, 2019")+theme_classic()
+
+```
+In case of Chicago, highest income ratios can be observed in the northern parts of the city, which roughly coincide with the areas of concentration of white households in the city. Traversing from north to south the incomes decrease.
+
+### 3.5.2 Income Segregation in New York City
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in New York City
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "New York",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "New York city, New York") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+NewYorkCity_tot_MHHI <- place_median_income$MHHI_tot[1]
+nyc_trt <- nyc_trt %>% mutate(inc_ratio = MHHI/NewYorkCity_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = nyc_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = nyc_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in New York City, 2019")+theme_classic()
+
+```
+In case of New York city, the patterns of income segregation also coincide with patterns of residential segregation. For example, in case of manhattan where the white population is most concentrated, is also the area where the incomes are the highest. Lowest incomes are recorded in Bronx and Queens and parts of the southern end of Brooklyn - all areaas of concentration of racial minorities. 
+### 3.5.3 Income Segregation in San Francisco
+
+```{r,echo = FALSE, message=FALSE}
+#Income Segregation in San Francisco
+place_var <- c("S1901_C01_012")
+place_median_income <-
+  get_acs(
+    geography = "place",
+    state = "California",
+    year = 2019,
+    variables = place_var,
+    survey = "acs5",
+    output = "wide"
+  ) %>% filter(NAME == "San Francisco city, California") %>% 
+  select(MHHI_tot = S1901_C01_012E)
+SanFrancisco_tot_MHHI <- place_median_income$MHHI_tot[1]
+sf_trt <- sf_trt %>% mutate(inc_ratio = MHHI/SanFrancisco_tot_MHHI)
+
+ggplot() + 
+  geom_sf(data = sf_trt, aes(fill = inc_ratio, colour = inc_ratio)) + 
+  geom_sf(data = sf_boundary,
+          colour = "RED",
+          fill = NA) + labs(title = "Income Ratios in San Francisco, 2019")+theme_classic()
+```
+In case of San Francisco, the aspect of income inequality is more acute than the case of other cities. This is because its map is the greatest range of income ratios that fall below the median household income for the entire city. these areas of poor income are aggregated towards the southern part of the city - where racial minorities are residentially segregated. The acuteness of the issue for San Francisco, makes it an area of unique intersectional interest for design significance of SDSS for the city. 
+
+## 3.6 Intersectionality between Income and Racial Segregation
+
+The maps, diagrams and statistical evidence above all bear a relationship between the intersectionality of income and race when it comes to spatial segregaton of vulnerable population groups in the city. In this section, we use scatter plots and line graphs to show the level of intersectionality and its importance for SDSS design for all the three cities. 
+
+### 3.6.1. Spatial relationship between Income and Race in Chicago
+
+```{r,echo = FALSE, message=FALSE}
+#Chicago
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = chi_trt, aes(x = PWhite, y = inc_ratio)) + ylim(0,4)+ geom_abline(method = "lm") +
+  labs(title = " % Whites v/s Incomes in Chicago, 2019", x = "Percent White", y = "Income Ratio")+theme_classic()
+
+```
+The distribution of counties with lower income ratios (below 1) are concentrated in the left half of the graph where the white population is the lowest. As incomes increase beyond the income ratio of 1, the percentage of white households within the plot also increase. This shows that both income and racial segregation happen together in the city. 
+
+### 3.6.2. Spatial relationship between Income and Race in New York City
+
+```{r,echo = FALSE, message=FALSE}
+#New York City
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = nyc_trt, aes(x = PWhite, y = inc_ratio)) + ylim(0,4)+geom_abline(method = "lm") +
+  labs(title = "% Whites v/s Incomes in New York City, 2019", x = "Percent White", y = "Income Ratio")+theme_classic()
+
+```
+
+Although in case of New York City, the number of tracts is very large, the highest earning tracts (income ratios >2) are located in areas where the percentage of white population is greater than 50%. This shows a unique vulnerability for the New York city, whereby populations below the income ratio of 2 might represent vulnerable populations residing in racially segregated areas.  
+
+### 3.6.3. Spatial relationship between Income and Race in San Francisco
+
+```{r,echo = FALSE, message=FALSE}
+#San Francisco
+#Intersectionality between Income and Racial Segregation
+ggplot() + geom_point(data = sf_trt, aes(x = PWhite, y = inc_ratio)) + ylim(0,4)+geom_abline(method = "lm") +
+  labs(title = "Whites v/s Incomes in San Francisco, 2019", x = "Percent White", y = "Income Ratio") +theme_classic()
+
+```
+In this section, the number of census tracts are the least, but from the graph, it is clear that the steepness of the graph, is less than other cities, meaning that incomes do not vary as much as other cities do across minorities (especially Asians). Unlike New York, the area of focus cannot be income ratios less than 2 in this case because it encompasses every population group in the city. It would be much better to assume that spatial vulnerability resides in census tracts below the income ratio of 1 and percentage of white population less than 25%. 
+
+# 4. Summary
+
+The following table summarises all the intersectional learnings from the above analyses. In the folowing section we will try to have a brief look at some of the demographic and location archetypes based on the above analysis. 
+
+|                                  Chicago                                 |                                                             New York                                                           |                                              San Francisco                                            |
+|:------------------------------------------------------------------------:|:------------------------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------:|
+|                                                                          |     Greatest Population Size, Highest Population Density, Greatest number   of households belonging to minority populations    |                                                                                                       |
+|     Largest Groups of Racial Minorities – Blacks (29%), Latinos (28%)    |                               Largest   Groups of Racial Minorities – Blacks (24%), Latinos (29%)                              |                   Largest   Groups of Racial Minorities – Asians (34%), Latinos (15%)                 |
+|         Largest   Vulnerable Age Group – 19 years and below (23%)        |                                    Largest   Vulnerable Age Group – 19 years and below (22%)                                   |                        Largest   Vulnerable Age Group – 65 years and above (17%)                      |
+|                                                                          |                                            Largest number of female headed households                                          |                                                                                                       |
+|              Black   female-Headed Households (57% of total)             |                                     Black   (41%) and Latina (39%) female headed households                                    |                         Asian   (36%) and Black (33%) female headed households                        |
+|                                                                          |                                                                                                                                |     Extremely high values of Median Household Income (112,449$, 2 times   of Chicago and New York)    |
+|                  Black   Households      (MHHI   (1-43%))                |                                             Black   Households      (MHHI   (1-24%))                                           |                       Black Households – Very Acute Disparity      (MHHI (1-70%))                     |
+|                                                                          |                                            Latino   Households      (MHHI   (1-31%))                                           |                                Latino   Households      (MHHI   (1-31%))                              |
+|                                                                          |                                                                                                                                |                                   Asian Households     (MHHI(1-15%))                                  |
+|                                                                          |                                         Highest Number of Persons below the Poverty Line                                       |                                                                                                       |
+|                  Poor   Persons below the age of 18 (30%)                |                                             Poor   Persons below the age of 18 (30%)                                           |                  Poor   Persons between the ages 45-64 years (25%), 64 and above (20%)                |
+|                                                                          |                                                                                                                                |                                       Males above 45 years of age                                     |
+|                Higher   percentage of Female Poverty (56%)               |                                           Higher   percentage of Female Poverty (56%)                                          |                               Higher   percentage of Female Poverty (52%)                             |
+|       High   percentage of poor females below 18 years of age (27%)      |                              High   percentage of poor females between 18 and 44 years of age (41%)                            |                        High   percentage of females above 64 years of age (23%)                       |
+|                                                                          |                                      Extremely high number and percentage of renters (67%)                                     |                                   High   Proportion of renters (62%)                                  |
+|                  High   Proportion of Black Renters (66%)                |                                            High   Proportion of Latino Renters (83%)                                           |                                High   Proportion of Black Renters (77%)                               |
+|         All   renters earning less than 35,000 USD (78% burdened)        |                                    All   renters earning less than 50,000 USD (70% burdened)                                   |                     All   renters earning less than 75,000 USD (52% rent burdened)                    |
+|                                                                          |                                                                                                                                |                                                                                                       |
+
+When it comes to understanding segregation as a form of spatial vulnerability, important insights are drawn from the data.It was observed that segregation is primarily against Blacks/African Americans in Chicago, Blacks and Latinos in New York City and against Asians and Blacks in San Francisco.Spatial Vulnerability through Dissimilarity is very high in case of Chicago and New York City (above 0.5) unlike San Francisco. Despite very high population, least interaction can be seen among different racial groups in NYC. New York City also has the greatest preponderance of isolation. Very high income disparity could be seen among the census tracts (based on race) in Chicago and NYC. 
+
+# 5. Design Archetypes
+
+From the above analysis, the following design archetypes have been discovered for each city – 
+
+Chicago : 
+1. A 19-year old black female headed household earning <35,000 USD living in rental housing (largest vulnerable group)
+2. A 25-year old Latina female headed household living in poverty in rental housing earning 29500$ per year and paying greater than 50% on rent (second largest vulnerable group)
+3. A 16 year old black teenage boy, who was employed and lives in rental housing , earning less than 25,000 USD per year, and has recently lost his job (third Largest vulnerable group)
+
+New York :
+1. A 35-year old Latina female headed household earning <50,000 USD, comprising two young children (largest vulnerable group) 
+2. A 20 year old female headed household with 2 or more very young children living in an extremely dense housing stock with her parents as a consequence of doubling down because of the pandemic(second largest vulnerable group)
+3. A Latino household who has just the income of one earning member due to the pandemic and is unable to pay rent (third Largest vulnerable group)
+
+San Francisco :
+1. A 65-year old married Asian couple, running a small business earning <75,000 USD per year(largest vulnerable group)
+2. A black female headed household living in rented housing and paying 60% of income to rent (second largest vulnerable group)
+3. A poor Asian female headed household (age above 45 years) suffering from job losses due to the pandemic. (third Largest vulnerable group)
+
+
+Locational Archetypes – 
+1. West and South Side Chicago
+2. Brooklyn, Bronx and Queens in New York City
+3. South East San Francisco/District 10
+
+# 6. Policy Implications
+
+Implications for policy are compared with the normative model of SDSS and presented in the table below. 
+
+|     Normative Model of Housing   Relocation SDSS     (Johnson, 2005; Sriraj et. al,   2006)                       |     Covid-19 Model/Housing Recovery   SDSS through an intersectional framework      (Author, 2021)                                                                                                          |
+|-------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|     Done with a Policy/programme in   Focus                                                                       |     Lack of clear guidelines, lack of   direction in the face of a massive impending housing crisis – prepared with a   long-term goal of housing recovery for vulnerable populations in mind               |
+|     Housing Clients of the Voucher   Program deemed as clients                                                    |     Identification of vulnerable groups   across different cities through creation of a heterogeneous vulnerability   index as clients                                                                      |
+|     Localised in the needs of a   single city – operationalised at a time of normalcy                             |     Tries to understand the unique   positionality of a city during a nationwide pandemic – operationalised during   times of an emergency                                                                  |
+|     Uses a simple model of   multi-criteria decision-making model to identify suitable locations for   housing    |     Uses a multi-layered model of   multi-criteria decision-making model to identify suitable locations for   housing                                                                                       |
+|     Assumes that the location of a   nearby facility equates provision of amenities                               |     Utilizes big data to inform the user of   the nature of facility at a location (whether it is functional, nearing   foreclosure, etc.) to determine access to infrastructure (particularly   health)    |
+|     Assumes scalability and   reproducibility                                                                     |     Demonstrates the unique vulnerability   of populations across different cities – different clients, different needs,   different design inputs                                                          |
+
+# 7. Scope and Limitations
+
+The research is a simplistic model of an intersectional analysis. Some of the major limitations of the research are the lack of data variety, because only a single source of data is taken. Although effort has been made to distinguish different cities based on their overall criteria, a more nuanced analysis would entail examining and organising data at the census tract or block level. Not much special effort was made to make the data relevant to the time frame of the Covid-19 pandemic. Data from more current times could add significant insights. Moreover, time series data would enable trend analysis of vulnerability across time. A more robust spatio temporal analytics approach would lend important insights to the body of research presented here. The scope of this research was limited to an overarching view of different vulnerabilities across cities in the US during a global pandemic. To a certain extent, a general idea has been presented towards the same, and the overarching goal has been reached.
+
+# 8. Areas of Future Research
+An intersectional analysis of housing instability taking cognizance of more accurate data sets and more advanced models of spatial analytics is the next step towards this project. This area will be explored through an independent research project over Summer 2021, under the guidance of Prof. Andrew Greenlee. 
+
+# 9. Acknowledgements
+I am grateful for the advice and guidance offered by Prof. Andrew Greenlee that led to the successful completion of this project. I am also very grateful to all my peers at the UP 494 course, particularly Asha Barnes, who took the time to help me prepare for my project and sharpen the intersectional lens thread that runs throughout the research. 
+
+# References
+
+Cunningham, M. K., Hariharan, A. & Fiol, O., 2020. The Looming Eviction Cliff: Findings from the Urban Institute Coronavirus Tracking Survey, s.l.: Urban Institute.
+
+Johnson, M. P., 2001. Decision Support for Family Relocation Decisions under Section 8 Housing Assistance Program using Geographic Information Systems and the Analytical Hierarchy Process. Journal of Housing Research, 12(2), pp. 277-306.
+
+Johnson, M. P., 2005. Spatial decision support for assisted housing mobility counseling. Decision Support Systems, Volume 41, pp. 296-312.
+
+Khanijahani, A. & Tomassoni, L., 2021. Socioeconomic and Racial Segregation and COVID-19: Concentrated Disadvantage and Black Concentration in Association with COVID-19 Deaths in the USA. Journal of racial and Ethnic Health Disparities, pp. 1-9.
+
+Layser, D. M. et al., 2020. Mitigating Housing Instability During a Pandemic. University of Illinois College of Law Legal Studies Research Paper, 20(15), pp. 1-74.
+
+Luhmann, S., 2020. Consider This: COVID-19 Makes Intersectional Research Urgent, Alberta: University of Alberta.
+
+Sriraj, P., Minor, M. & Thakuriah, P. V., 2006. Impact of Information on Housing Relocation using Analytical Hierarchy Process and Interactive GIS. Applications of Advanced Technology in Transportation, pp. 816-821.
